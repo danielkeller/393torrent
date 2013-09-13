@@ -1,0 +1,8 @@
+#LaTeX files
+*.aux
+*.pdf
+*.log
+
+#haskell files
+*.prof
+dist
