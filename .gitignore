@@ -2,6 +2,8 @@
 *.aux
 *.pdf
 *.log
+*.gz
+*.toc
 
 #haskell files
 *.prof

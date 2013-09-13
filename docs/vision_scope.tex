@@ -1,21 +1,90 @@
-\documentclass{article}
+\documentclass[letter]{scrartcl}
 \usepackage{graphicx}
+\usepackage{fullpage} %1in margins
+
+\newcommand{\app}{\sc{393torrent}}
 
 \begin{document}
 
-\title{Introduction to \LaTeX{}}
-\author{Author's Name}
+\title{Vision and Scope Document}
+\subtitle{for \app}
+\date{} % no date
 
 \maketitle
 
 \begin{abstract}
-This is abstract text: This simple document shows very basic features of
-\LaTeX{}.
+This document outlines the high level plan for our software project.
 \end{abstract}
 
-\section{Introduction}
+\tableofcontents
+\pagebreak
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-incididunt ut labore et dolore magna aliqua.
+\section{Business Requirements}
+\subsection{Background, Business Opportunity, and Customer Needs}
+utorrent is crappy \\
+there are many heavyweight bt client and we want a lighweight one with no ads
+
+\subsection{Business Objectives and Success Criteria}
+%this creates a labeled list
+\begin{description}
+\item[BO-1] usable alternative to utorrent - perform most important functions that utorrent does
+\item[BO-2] fast - load in \textless500ms, repond to user in \textless100ms
+\\
+\item[SC-1] group members can use the program for their day-to-day bittorrent tasks
+\end{description}
+
+\subsection{Business Risks}
+\begin{description}
+\item[RI-1] software bug could compromise security
+\end{description}
+
+
+\section{Vision of the Solution}
+\subsection{Vision Statement}
+blah blah useable bt client, blah blah no ads
+\subsection{Major Features}
+%numbered list
+\begin{enumerate}
+\item downloading
+\item uploading
+\item user feedback
+\item pause/resume
+\item algorithms to optimize download speed
+\item official extensions - fast peer, dht, encryption
+\item create torrents
+\item magnet links
+\item configurable
+\item multiple downloads at once
+\end{enumerate}
+
+\subsection{Assumptions and Dependencies}
+\begin{description}
+\item[AS-1] Spec documentation is correct
+\end{description}
+
+\section{Scope and Limitations}
+\subsection{Scope of Initial and Subsequent Releases}
+%this is how you do a table. the ells are left alignment and the bars are vertical lines
+\begin{tabular}{| l | l | l | l | l |}
+\hline
+\textbf{Feature} & \textbf{Version 1} & \textbf{Version 2} & \textbf{Version 3} & \textbf{Version 4} \\
+\hline
+\hline
+1 & Fully implemented & & & \\
+\hline
+2 & etc & & & \\
+\hline
+\end{tabular}
+
+%\subsection{Limitations and Exclusions}
+%i`m pretty sure this isn`t applicable
+
+
+\section{Business Context}
+\subsection{Stakeholder Profiles}
+seeders, dowloaders
+
+\subsection{Project Priorities}
+sched, features, quality
 
 \end{document}
