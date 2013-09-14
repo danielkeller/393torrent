@@ -21,40 +21,44 @@ This document outlines the high level plan for our software project.
 
 \section{Business Requirements}
 \subsection{Background, Business Opportunity, and Customer Needs}
-utorrent is crappy \\
-there are many heavyweight bt client and we want a lighweight one with no ads
+Many heavyweight bittorrent clients currently exist that are littered with ads, masking the primary functionality for the user.
 
 \subsection{Business Objectives and Success Criteria}
 %this creates a labeled list
 \begin{description}
-\item[BO-1] usable alternative to utorrent - perform most important functions that utorrent does
-\item[BO-2] fast - load in \textless500ms, repond to user in \textless100ms
+\item[BO-1] Usable alternative to mainstream Bittorrent clients
+\item[BO-2] Perform the most important functions of Bittorrent clients
+\item[BO-3] Needs to be fast 
+\begin{enumerate}
+  \item Load in \textless500ms
+  \item Respond to user in \textless100ms
+\end{enumerate}
 \\
-\item[SC-1] group members can use the program for their day-to-day bittorrent tasks
+\item[SC-1] Group members can use the program for their day-to-day bittorrent tasks
 \end{description}
 
 \subsection{Business Risks}
 \begin{description}
-\item[RI-1] software bug could compromise security
+\item[RI-1] Software bugs could potentially compromise security
 \end{description}
 
 
 \section{Vision of the Solution}
 \subsection{Vision Statement}
-blah blah useable bt client, blah blah no ads
+To create a lightweight BitTorrent application free of ads, providing ease of use and ultimate productivity for the user.
 \subsection{Major Features}
 %numbered list
 \begin{enumerate}
-\item downloading
-\item uploading
-\item user feedback
-\item pause/resume
-\item algorithms to optimize download speed
-\item official extensions - fast peer, dht, encryption
-\item create torrents
-\item magnet links
-\item configurable
-\item multiple downloads at once
+\item Ability to download a file
+\item Ability to upload a file
+\item Ability to submit user feedback
+\item Ability to pause/resume
+\item Ability to create torrents
+\item Ability to download multiple torrents at once
+\item Optimal download speed with use of appropriate algorithms
+\item Official extensions - fast peer, dht, encryption
+\item Magnet links
+\item Configurable
 \end{enumerate}
 
 \subsection{Assumptions and Dependencies}
