@@ -41,6 +41,7 @@ Many heavyweight BitTorrent clients currently exist that are littered with ads, 
 \subsection{Business Risks}
 \begin{description}
 \item[RI-1] Software bugs could potentially compromise security
+\item[RI-2] Software could crash with too many simultaneous downloads
 \end{description}
 
 
@@ -87,7 +88,15 @@ To create a lightweight BitTorrent application free of ads, providing ease of us
 
 \section{Business Context}
 \subsection{Stakeholder Profiles}
-seeders, dowloaders
+\begin{tabular}{| l | l | l | l | l |}
+\hline
+\textbf{Stakeholder} & \textbf{Major Value} & \textbf{Attitudes} & \textbf{Major Interests} & {Constraints} \\
+\hline
+\hline
+Developers  & & & & \\
+Seeders     & & & & \\ 
+Downloaders & & & & \\
+\end{tabular}
 
 \subsection{Project Priorities}
 \begin{tabular}{| l | l | l | l | l |}
@@ -95,12 +104,12 @@ seeders, dowloaders
 \textbf{Dimension} & \textbf{Driver} & \textbf{Constraint} & \textbf{Degree of Freedom} \\
 \hline
 \hline
-Schedule & & & \\
+Schedule & & & A new release must be delivered every week \\
 \hline
-Features & & & \\
+Features & & In each release, features for that release must be fully operational & \\
 \hline
-Quality  & & & \\
+Quality  & & All unit tests must pass; all security tests must pass; compliance with software specification must be enforced & \\
 \hline
-Members  & & & \\
+Members  & 4 developers who will all write code and test & & \\
 \end{tabular}
 \end{document}
