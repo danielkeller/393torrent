@@ -90,35 +90,24 @@ System will be developed as a command line program; time permitting, a GUI may b
 
 \section{Business Context}
 \subsection{Stakeholder Profiles}
-\begin{tabular}{| l | l | l | l | l |}
+\tabcolsep=0.11cm
+\begin{tabular}{| p{3cm} | p{3cm} | p{3cm} | p{3cm} | p{3cm} |} 
 \hline
 \textbf{Stakeholder} & \textbf{Major Value} & \textbf{Attitudes} & \textbf{Major Interests} & {Constraints} \\
 \hline
 \hline
-Developers
-  & Creation of the BitTorrent client 
-  & Commitment through all versions 
-  & Quality, performance, maintainability, scalability 
-  & Most members learning Haskell for the first time \\
-Seeders     
-  & Give downloaders opportunity to download files; more seeders allow faster download times 
-  & Allow others to download file from them 
-  & Providing service to downloaders 
-  &  \\ 
-Downloaders 
-  & People who download files from seeders 
-  & May or may not become seeders or leechers
-  & Getting a specific file for their use
-  & \\
-Leechers
-  & None, they do not contribute anything 
-  & Benefit from downloaded files, but do not offer to seed 
-  & Acquiring information and files 
-  & \\
+Developers & Creation of the BitTorrent client & Commitment through all versions & Quality, performance, maintainability, scalability & Most members learning Haskell for the first time \\
+\hline
+Seeders & Give downloaders opportunity to download files; more seeders allow faster download times & Allow others to download file from them & Providing service to downloaders &  \\ 
+\hline
+Downloaders & People who download files from seeders & May or may not become seeders or leechers & Getting a specific file for their use & \\
+\hline
+Leechers& None, they do not contribute anything & Benefit from downloaded files, but do not offer to seed & Acquiring information and files & \\
+\hline
 \end{tabular}
 
 \subsection{Project Priorities}
-\begin{tabular}{| l | l | l | l | l |}
+\begin{tabular}{| p{3cm} | p{3cm} | p{3cm} | p{3cm} | p{3cm} |}
 \hline
 \textbf{Dimension} & \textbf{Driver} & \textbf{Constraint} & \textbf{Degree of Freedom} \\
 \hline
@@ -129,12 +118,13 @@ Features & & In each release, features for that release must be fully operationa
 \hline
 Quality  & & All unit tests must pass; all security tests must pass; compliance with software specification must be enforced & \\
 \hline
-Scalability
+Scalability & & & \\
 \hline
-Maintainability
+Maintainability & & & \\
 \hline
-Performance
+Performance & & & \\
 \hline
 Members  & 4 developers who will all write code and test & & \\
+\hline
 \end{tabular}
 \end{document}
