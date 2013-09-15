@@ -47,7 +47,7 @@ Many heavyweight BitTorrent clients currently exist that are littered with ads, 
 
 \section{Vision of the Solution}
 \subsection{Vision Statement}
-To create a lightweight BitTorrent application free of ads, providing ease of use and ultimate productivity for the user.
+To create a lightweight BitTorrent application free of advertisements, providing ease of use and ultimate productivity for the user.  Users will be able to upload and download files, create torrents, and configure the client without the inconvenience of advertisements.
 \subsection{Major Features}
 %numbered list
 \begin{enumerate}
@@ -66,6 +66,8 @@ To create a lightweight BitTorrent application free of ads, providing ease of us
 \subsection{Assumptions and Dependencies}
 \begin{description}
 \item[AS-1] Specification documentation is correct
+\item[DE-1] Client must be compatible with Windows, Linux, iOS
+System will be developed as a command line program; time permitting, a GUI may be added.
 \end{description}
 
 \section{Scope and Limitations}
@@ -93,9 +95,26 @@ To create a lightweight BitTorrent application free of ads, providing ease of us
 \textbf{Stakeholder} & \textbf{Major Value} & \textbf{Attitudes} & \textbf{Major Interests} & {Constraints} \\
 \hline
 \hline
-Developers  & & & & \\
-Seeders     & & & & \\ 
-Downloaders & & & & \\
+Developers
+  & Creation of the BitTorrent client 
+  & Commitment through all versions 
+  & Quality, performance, maintainability, scalability 
+  & Most members learning Haskell for the first time \\
+Seeders     
+  & Give downloaders opportunity to download files; more seeders allow faster download times 
+  & Allow others to download file from them 
+  & Providing service to downloaders 
+  &  \\ 
+Downloaders 
+  & People who download files from seeders 
+  & May or may not become seeders or leechers
+  & Getting a specific file for their use
+  & \\
+Leechers
+  & None, they do not contribute anything 
+  & Benefit from downloaded files, but do not offer to seed 
+  & Acquiring information and files 
+  & \\
 \end{tabular}
 
 \subsection{Project Priorities}
@@ -109,6 +128,12 @@ Schedule & & & A new release must be delivered every week \\
 Features & & In each release, features for that release must be fully operational & \\
 \hline
 Quality  & & All unit tests must pass; all security tests must pass; compliance with software specification must be enforced & \\
+\hline
+Scalability
+\hline
+Maintainability
+\hline
+Performance
 \hline
 Members  & 4 developers who will all write code and test & & \\
 \end{tabular}
