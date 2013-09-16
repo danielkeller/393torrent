@@ -1,6 +1,7 @@
 \documentclass[letter]{scrartcl}
 \usepackage{graphicx}
 \usepackage{fullpage} %1in margins
+\usepackage{tabularx}
 
 \newcommand{\app}{\sc{393torrent}}
 
@@ -72,7 +73,7 @@ System will be developed as a command line program; time permitting, a GUI may b
 \section{Scope and Limitations}
 \subsection{Scope of Initial and Subsequent Releases}
 %this is how you do a table. the ells are left alignment and the bars are vertical lines
-\begin{tabular}{| l | l | l | l | l |}
+\begin{tabularx}{\textwidth}{| X | X | X | X | X |}
 \hline
 \textbf{Feature} & \textbf{Version 1} & \textbf{Version 2} & \textbf{Version 3} & \textbf{Version 4} \\
 \hline
@@ -81,7 +82,7 @@ System will be developed as a command line program; time permitting, a GUI may b
 \hline
 2 & etc & & & \\
 \hline
-\end{tabular}
+\end{tabularx}
 
 %\subsection{Limitations and Exclusions}
 %i`m pretty sure this isn`t applicable
@@ -90,9 +91,9 @@ System will be developed as a command line program; time permitting, a GUI may b
 \section{Business Context}
 \subsection{Stakeholder Profiles}
 \tabcolsep=0.11cm
-\begin{tabular}{| p{3cm} | p{3cm} | p{3cm} | p{3cm} | p{3cm} |} 
+\begin{tabularx}{\textwidth}{| X | X | X | X | X |}
 \hline
-\textbf{Stakeholder} & \textbf{Major Value} & \textbf{Attitudes} & \textbf{Major Interests} & {Constraints} \\
+\textbf{Stakeholder} & \textbf{Major Value} & \textbf{Attitudes} & \textbf{Major Interests} & \textbf{Constraints} \\
 \hline
 \hline
 Developers & Creation of the BitTorrent client & Commitment through all versions & Quality, performance, maintainability, scalability & Most members learning Haskell for the first time \\
@@ -103,10 +104,10 @@ Downloaders & People who download files from seeders & May or may not become see
 \hline
 Leechers& None, they do not contribute anything & Benefit from downloaded files, but do not offer to seed & Acquiring information and files & \\
 \hline
-\end{tabular}
+\end{tabularx}
 
 \subsection{Project Priorities}
-\begin{tabular}{| p{3cm} | p{3cm} | p{3cm} | p{3cm} | p{3cm} |}
+\begin{tabularx}{\textwidth}{| X | X | X | X |}
 \hline
 \textbf{Dimension} & \textbf{Driver} & \textbf{Constraint} & \textbf{Degree of Freedom} \\
 \hline
@@ -125,5 +126,5 @@ Performance & & & \\
 \hline
 Members  & 4 developers who will all write code and test & & \\
 \hline
-\end{tabular}
+\end{tabularx}
 \end{document}
