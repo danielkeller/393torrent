@@ -66,7 +66,7 @@ To create a lightweight BitTorrent application free of advertisements, providing
 \subsection{Assumptions and Dependencies}
 \begin{description}
 \item[AS-1] Specification documentation is correct
-\item[DE-1] Client must be compatible with Windows, Linux, iOS
+\item[DE-1] Client must be compatible with Windows, Linux, iOS;
 System will be developed as a command line program; time permitting, a GUI may be added.
 \end{description}
 
@@ -100,7 +100,7 @@ Developers & Creation of the BitTorrent client & Commitment through all versions
 \hline
 Seeders & Give downloaders opportunity to download files; more seeders allow faster download times & Allow others to download file from them & Providing service to downloaders &  \\ 
 \hline
-Downloaders & People who download files from seeders & May or may not become seeders or leechers & Getting a specific file for their use & \\
+Downloaders & People who download files from seeders & May or may not become seeders or leechers & Getting a specific file for their use & Number of seeders \\
 \hline
 Leechers& None, they do not contribute anything & Benefit from downloaded files, but do not offer to seed & Acquiring information and files & \\
 \hline
@@ -112,19 +112,19 @@ Leechers& None, they do not contribute anything & Benefit from downloaded files,
 \textbf{Dimension} & \textbf{Driver} & \textbf{Constraint} & \textbf{Degree of Freedom} \\
 \hline
 \hline
-Schedule & & & A new release must be delivered every week \\
+Schedule & & Limited to one semester of work; must hit project milestones for given dates & A new release must be delivered every week \\
 \hline
-Features & & In each release, features for that release must be fully operational & \\
+Features & Getting features right means users are satisfied & In each release, features for that release must be fully operational & Features for specified release must be included and work \\
 \hline
-Quality  & & All unit tests must pass; all security tests must pass; compliance with software specification must be enforced & \\
+Quality  & & All unit tests must pass; all security tests must pass; compliance with software specification must be enforced & Test-driven development will be utilized to ensure quality\\
 \hline
-Scalability & & & \\
+Scalability & Code will be able to add features and extensions as needed & For the client to be lightweight, scope must be limited & \\
 \hline
-Maintainability & & & \\
+Maintainability & Code will follow good programming practices & Maintainable code depends largely on the discipline of the developers &  \\
 \hline
-Performance & & & \\
+Performance & Code will maintain the performance specifications as stated in the business objectives & Knowledge of proper algorithms; computing power & \\
 \hline
-Members  & 4 developers who will all write code and test & & \\
+Members  & 4 developers who will all write code and test & Many new to functional programming & \\
 \hline
 \end{tabularx}
 \end{document}
