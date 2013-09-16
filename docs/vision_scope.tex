@@ -30,11 +30,9 @@ Many heavyweight BitTorrent clients currently exist that are littered with ads, 
 \item[BO-1] Follow BitTorrent specification
 \item[BO-2] Create usable alternative to mainstream BitTorrent clients
 \item[BO-3] Perform the most important functions of BitTorrent clients
-\item[BO-4] Needs to be fast 
-\begin{enumerate}
-  \item Load in \textless500ms
-  \item Respond to user in \textless100ms
-\end{enumerate}
+\item[BO-4] Needs to be fast:
+Load in \textless500ms,
+Respond to user in \textless100ms.
 \item[SC-1] Group members can use the program for their day-to-day BitTorrent tasks
 \end{description}
 
@@ -52,35 +50,51 @@ To create a lightweight BitTorrent application free of advertisements, providing
 %numbered list
 \begin{enumerate}
 \item Ability to download a file
+\item Ability to display progress to user
 \item Ability to upload a file
-\item Ability to submit user feedback
 \item Ability to pause/resume
 \item Ability to create torrents
 \item Ability to download multiple torrents at once
 \item Optimal download speed with use of appropriate algorithms
 \item Official extensions - fast peer, dht, encryption
-\item Magnet links
+\item Support for magnet links
 \item Configurable
 \end{enumerate}
 
 \subsection{Assumptions and Dependencies}
 \begin{description}
 \item[AS-1] Specification documentation is correct
-\item[DE-1] Client must be compatible with Windows, Linux, iOS
-System will be developed as a command line program; time permitting, a GUI may be added.
+\item[DE-1] Client must be compatible with Windows, Linux, Mac. 
+System will be developed as a command line program.
 \end{description}
 
 \section{Scope and Limitations}
 \subsection{Scope of Initial and Subsequent Releases}
 %this is how you do a table. the ells are left alignment and the bars are vertical lines
-\begin{tabularx}{\textwidth}{| X | X | X | X | X |}
+\begin{tabularx}{\textwidth}{| X | X | X | X | X | X | X |}
 \hline
-\textbf{Feature} & \textbf{Version 1} & \textbf{Version 2} & \textbf{Version 3} & \textbf{Version 4} \\
+\textbf{Feature} & \textbf{V1} & \textbf{V2} & \textbf{V3} & \textbf{V4} & \textbf{V5} \\
 \hline
 \hline
-1 & Fully implemented & & & \\
+1 & Done & & & & \\
 \hline
-2 & etc & & & \\
+2 & Partly Done & Done & & & \\
+\hline
+3 & & Done & & & \\
+\hline
+4 & & & Done & & \\
+\hline
+5 & & & & Done & \\
+\hline
+6 & & & & & Done \\
+\hline
+7 & & & Done & & \\
+\hline
+8 & & & & Done & \\
+\hline
+9 & & Done & & & \\
+\hline
+10 & & & & & Done \\
 \hline
 \end{tabularx}
 
@@ -118,11 +132,12 @@ Features & & In each release, features for that release must be fully operationa
 \hline
 Quality  & & All unit tests must pass; all security tests must pass; compliance with software specification must be enforced & \\
 \hline
-Scalability & & & \\
+Scalability & & Can download payloads of any size without using over 50MB of RAM & \\
 \hline
-Maintainability & & & \\
-\hline
-Performance & & & \\
+Performance & &
+Load in \textless500ms
+Respond to user in \textless100ms
+& \\
 \hline
 Members  & 4 developers who will all write code and test & & \\
 \hline
