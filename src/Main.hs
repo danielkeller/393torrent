@@ -1,3 +1,5 @@
 module Main where
 
-main = putStrLn "Hello World!"
+import qualified Cli
+
+main = Cli.main
