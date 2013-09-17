@@ -5,7 +5,7 @@ build-type: Simple
 license: AllRightsReserved
 
 executable 393torrent
-    build-depends: base >= 3 && < 5
+    build-depends: base >= 3 && < 5, QuickCheck, HUnit, test-framework, test-framework-quickcheck2, test-framework-hunit
     main-is: Main.hs
     buildable: True
     hs-source-dirs: src
