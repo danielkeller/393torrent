@@ -8,3 +8,4 @@
 #haskell files
 *.prof
 dist
+*.lkshs
