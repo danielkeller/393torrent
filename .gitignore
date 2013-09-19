@@ -1,9 +1,10 @@
 #LaTeX files
-*.aux
-*.pdf
-*.log
-*.gz
-*.toc
+docs/*.aux
+docs/*.pdf
+docs/*.log
+docs/*.gz
+docs/*.toc
+docs/*.out
 
 #haskell files
 *.prof
