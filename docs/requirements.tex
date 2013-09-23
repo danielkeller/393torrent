@@ -27,8 +27,36 @@ User stories are the functional requirements of XP. They are used in iteration p
 \begin{tabularx}{\textwidth}{X c c c}
 \textbf{User Story} & \href{http://c2.com/cgi/wiki?IdealProgrammingTime}{\textbf{Cost (Ideal Days)}}
 & \textbf{Status} & \textbf{Iteration} \\
-User wants to do \textit{things} and sometimes \textit{stuff}. & 4 days & Not Started & TBD \\
-User wants to decide the halting problem. & \texttt{undefined} & Failed & \texttt{0x7F8FFFFF} \\
+Open .torrent file and initiate download \\
+Communicate with tracker \\
+Communicate with peers \\
+Track peers \\
+Track and assemble file pieces \\
+Test piece checksums \\
+Calculate percent complete \\
+Calcuate download speed \\
+Calcuate upload speed \\
+Estimate ETA \\
+Display progress bar \\
+Interpret peer piece request \\
+Send file pieces to peer \\
+Saving state of download to file \\
+Resuming download from saved state \\
+Continuously save state in case process is killed \\
+Accept a list of files and output a .torrent \\
+Track or store local files being uploaded \\
+Ability to download multiple files via multiple instances \\
+\href{https://wiki.theory.org/BitTorrentSpecification\#have:_.3Clen.3D0005.3E.3Cid.3D4.3E.3Cpiece_index.3E}{HAVE suppression} \\
+\href{https://wiki.theory.org/BitTorrentSpecification\#Queuing}{Queueing} \\
+\href{https://wiki.theory.org/BitTorrentSpecification\#Super_Seeding}{Super Seeding} \\
+\href{https://wiki.theory.org/BitTorrentSpecification\#Piece_downloading_strategy}{Piece Download Strategy} \\
+\href{https://wiki.theory.org/BitTorrentSpecification\#End_Game}{End Game} \\
+\href{https://wiki.theory.org/BitTorrentSpecification\#Choking_and_Optimistic_Unchoking}{Choking} \\
+Fast Peer extension \\
+DHT extension \\
+Encryption extension \\
+Magnet links \\
+Human-readable config file
 \end{tabularx}
 
 \section{Nonfunctional Requirements}
@@ -48,4 +76,9 @@ Created document outline.
 \subsection{Kenneth Link}
 \subsection{Nathan McKinley}
 \subsection{Ross Nanopoulos}
+
+\section{Inspection}
+\begin{tabularx}{\textwidth}{X c c}
+\textbf{Comment} & \textbf{Reported By} & \textbf{Fixed By} \\
+\end{tabularx}
 \end{document}
