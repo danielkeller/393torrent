@@ -64,12 +64,23 @@ Human-readable config file
 \section{Nonfunctional Requirements}
 Nonfunctional requirements are requirements that do not involve their own coding effort. They are used in acceptance testing, but not iteration planning. 
 \subsection{Performance}
-Don\rq{}t hog memory.
+\begin{enumerate}
+\item Use less than 100 MB of RAM.
+\item Make use of available bandwidth, but be functional on a 128 Kbps link.
+\item Allow download speeds to spike above disk throughput temporarily.
+\end{enumerate}
 \subsection{Security}
-Don\rq{}t let hackers into the user\rq{}s computer.
+\begin{enumerate}
+\item Never run executable code that the user has asked to download.
+\item Fail cleanly on unexpected data, and inform the user of errors.
+\end{enumerate}
 \subsection{Quality}
-Don\rq{}t explode if something bad happens.
-
+\begin{enumerate}
+\item Be resilient to network connection failures; be usable over, for instance, a 4G network.
+\item Where possible, follow DRY principles.
+\item Where possible, use existing libraries.
+\item Support "common convention" over strict implementation of protocol.
+\end{enumerate}
 \pagebreak
 \section{Author Contributions}
 This section provides the details to what each author contributed to the vision and scope document, as requested per professor Podgurski.
@@ -77,6 +88,7 @@ This section provides the details to what each author contributed to the vision 
 Created document outline.
 \subsection{Kenneth Link}
 \subsection{Nathan McKinley}
+Nathan was responsible for the non-functional requirements.
 \subsection{Ross Nanopoulos}
 
 \section{Inspection}
