@@ -2,6 +2,8 @@ module Main (
     main
 ) where
 
+import TorrentFile
+
 import Test.Framework
 import Test.Framework.Providers.HUnit (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
