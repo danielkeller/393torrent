@@ -1,0 +1,10 @@
+Version of workspace file format:
+               1
+Time of storage:
+               "Mon Sep 16 18:13:12 Eastern Daylight Time 2013"
+Name of the workspace:
+               "393torrent"
+File paths of contained packages:
+               ["393torrent.cabal"]
+Maybe file path of an active package:
+               Just "393torrent.cabal"
