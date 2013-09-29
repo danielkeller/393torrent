@@ -23,4 +23,5 @@ test-suite test
     type: exitcode-stdio-1.0
     main-is: TestMain.hs
     hs-source-dirs: src, test
-    ghc-options: -Wall -fno-warn-missing-signatures -fhpc -hpcdir dist/hpc/mix/393torrent-0.0.1
+    ghc-options: -fhpc -hpcdir dist/hpc/mix/393torrent-0.0.1
+    other-modules: TorrentFileTest

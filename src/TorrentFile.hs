@@ -1,13 +1,16 @@
+--don't warn about incomplete patterns. We just let it call error and catch the exception
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 module TorrentFile (
-	TorrentFile,
-	FileInfo,
+	TorrentFile(..),
+	FilesInfo(..),
+	FileInfo(..),
 	openTorrent,
     readTorrent,
 ) where
 
 import Data.BEncode
 
-import Data.Time
+import Data.Time(UTCTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 
 import qualified Data.ByteString as BS
@@ -21,15 +24,8 @@ import System.FilePath(joinPath)
 
 import Data.Int(Int64)
 import qualified Data.Map as Map
+import Data.Map ((!))
 import Control.Exception
-
---define a ! with better errors for showable keys
-(!) :: (Ord k, Show k) => Map.Map k m -> k -> m
-(!) dict key = case Map.lookup key dict of
-    Just val -> val
-    Nothing -> error (show key ++ " not found in dictionary")
-
-infixl 9 ! --same as in Data.Map
 
 data TorrentFile = TorrentFile
 	{announce :: String
@@ -39,24 +35,20 @@ data TorrentFile = TorrentFile
 	,pieces :: [BS.ByteString]
 	,fileInfo :: FilesInfo
     }
-    deriving Show
 
 data FilesInfo = SingleFile FileInfo | MultiFile FilePath [FileInfo]
-    deriving Show
 
 data FileInfo = FileInfo
 	{path :: FilePath
 	,fileLength :: Int64
     }
-    deriving Show
 
 openTorrent :: FilePath -> IO TorrentFile
 openTorrent torrentPath =
-    handle (\ (ErrorCall m) -> error (torrentPath ++ " is not a valid .torrent file:\n\t" ++ m)) $
+    handle (\ (ErrorCall _) -> error (torrentPath ++ " is not a valid .torrent file")) $
     do fileData <- BSL.readFile torrentPath
-       case bRead fileData of
-           Nothing -> error "Not a torrent file"
-           Just benc -> return $ readTorrent $ benc
+       --use case instead of let to force evaluation
+       case bRead fileData of Just benc -> return $ readTorrent $ benc
        --the binary instance for BEncode is broken
 
 readTorrent :: BEncode -> TorrentFile
@@ -69,7 +61,6 @@ readTorrent (BDict dict) = TorrentFile
     ,fileInfo = getFilesInfo info
 	}
     where BDict info = dict ! "info"
-readTorrent _ = error "expected a dictionary"
 
 getFilesInfo :: Map.Map String BEncode -> FilesInfo
 getFilesInfo info
@@ -84,19 +75,15 @@ getFileInfo :: BEncode -> FileInfo
 getFileInfo (BDict file) = FileInfo {path = bListToPath $ file ! "path"
                                     ,fileLength = bInt $ file ! "length"
                                     }
-getFileInfo _ = error "expected a dictionary"
 
 bStrToString :: BEncode -> String
 bStrToString (BString s) = toString (toStrict s)
-bStrToString _ = error "expected a string"
 
 bIntToTime :: BEncode -> UTCTime
 bIntToTime (BInt i) = posixSecondsToUTCTime (fromIntegral i)
-bIntToTime _ = error "expected an integer"
 
 bInt :: Integral a => BEncode -> a
 bInt (BInt i) = fromIntegral i
-bInt _ = error "expected an integer"
 
 --break the ByteString into a list of 20-byte SHA1 pieces
 bStrToPieces :: BEncode -> [BS.ByteString]
@@ -104,8 +91,6 @@ bStrToPieces (BString s) = unfoldr nextpiece (toStrict s)
     where nextpiece s' | BS.null s' = Nothing
                        | otherwise = Just (BS.splitAt 20 s') 
           --unfoldr want a pair (output, next) which splitAt provides
-bStrToPieces _ = error "expected a string"
 
 bListToPath :: BEncode -> FilePath
 bListToPath (BList dirs) = joinPath (map bStrToString dirs)
-bListToPath _ = "expected a list of strings"
