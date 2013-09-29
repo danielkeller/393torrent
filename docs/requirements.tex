@@ -15,11 +15,14 @@
 \maketitle
 
 \begin{abstract}
-The requirements document specified all user stories (functional requirements) as well as nonfunctional requirements. These requirements are used in iteration planning and acceptance testing.
+The software requirements specification (SRS) specifies all user stories (i.e. functional requirements) as well as nonfunctional requirements. These requirements are used in iteration planning as well as acceptance testing.  This document should be used by the members of the 393torrent team, who will implement and verify the functionality of the BitTorrent client.
 \end{abstract}
 
 \tableofcontents
 \pagebreak
+
+\section{Overview}
+The BitTorrent client (393torrent) will allow users to download, create, and seed torrent files.  It will enable them to achieve the full functionality of a BitTorrent client in a lightweight form.  The primary objective of this BitTorrent client is to offer a free and open source alternative--without advertisements--to the current heavyweight clients available.  Specific goals of 393torrent can be found in the vision and scope document.
 
 \section{User Stories}
 User stories are the functional requirements of XP. They are used in iteration planning as well as acceptance testing.
@@ -42,12 +45,12 @@ Display progress bar \\
 Output error messages & & 1 (part) \\
 Interpret peer piece request \\
 Send file pieces to peer \\
-Saving state of download to file \\
-Resuming download from saved state \\
-Continuously save state in case process is killed \\
+Save state of download to file \\
+Resume download from saved state \\
+Save state continuously in case process is killed \\
 Accept a list of files and output a .torrent \\
 Track or store local files being uploaded \\
-Ability to download multiple files via multiple instances \\
+Download multiple files \\
 \href{https://wiki.theory.org/BitTorrentSpecification\#have:_.3Clen.3D0005.3E.3Cid.3D4.3E.3Cpiece_index.3E}{HAVE suppression} \\
 \href{https://wiki.theory.org/BitTorrentSpecification\#Queuing}{Queueing} \\
 \href{https://wiki.theory.org/BitTorrentSpecification\#Super_Seeding}{Super Seeding} \\
@@ -90,10 +93,14 @@ Created document outline.
 \subsection{Nathan McKinley}
 Nathan was responsible for the non-functional requirements.
 \subsection{Ross Nanopoulos}
+Ross created user stories and an overview.
 
 \section{Inspection}
 \begin{tabularx}{\textwidth}{X c c}
 \textbf{Comment} & \textbf{Reported By} & \textbf{Fixed By} \\
 Additional UI features & Ross & Dan \\
+Include an overview & Ross & Ross \\
+Do not need to include how we will implement features (only what the features are) until design document & Ross & Ross \\
+Format user stories the same way & Ross & Ross \\
 \end{tabularx}
 \end{document}
