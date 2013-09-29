@@ -1,49 +1,111 @@
 module TorrentFile (
 	TorrentFile,
-	TorrentInfo,
 	FileInfo,
 	openTorrent,
+    readTorrent,
 ) where
 
 import Data.BEncode
+
 import Data.Time
-import Data.ByteString
-import Data.Binary(decodeFile)
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL (readFile)
+import Data.ByteString.UTF8 (toString)
+--BEncode uses lazy bytestring, but most libraries use strict ones
+import Data.ByteString.Lazy.Char8 (toStrict)
+import Data.List(unfoldr)
+
+import System.FilePath(joinPath)
+
 import Data.Int(Int64)
-import Data.Map ((!))
-import qualified Data.Map as Map ()
+import qualified Data.Map as Map
+import Control.Exception
 
-data TorrentFile = TorrentFile {
-	info :: TorrentInfo,
-	announce :: String,
-	creationDate :: Maybe UTCTime,
-	comment :: Maybe String
-}
+--define a ! with better errors for showable keys
+(!) :: (Ord k, Show k) => Map.Map k m -> k -> m
+(!) dict key = case Map.lookup key dict of
+    Just val -> val
+    Nothing -> error (show key ++ " not found in dictionary")
 
-data TorrentInfo = TorrentInfo {
-	pieceLen :: Int64,
-	pieces :: ByteString,
-	fileInfo :: FilesInfo
-}
+infixl 9 ! --same as in Data.Map
 
-data FilesInfo = SingleFile FileInfo | MultiFile [FileInfo]
+data TorrentFile = TorrentFile
+	{announce :: String
+	,creationDate :: Maybe UTCTime
+	,comment :: Maybe String
+	,pieceLen :: Int64
+	,pieces :: [BS.ByteString]
+	,fileInfo :: FilesInfo
+    }
+    deriving Show
 
-data FileInfo = FileInfo {
-	name :: FilePath,
-	length :: Int64,
-	md5sum :: ByteString
-}
+data FilesInfo = SingleFile FileInfo | MultiFile FilePath [FileInfo]
+    deriving Show
 
-openTorrent :: FilePath -> IO 
-openTorrent path = do
-	benc <- decodeFile path
-	return (readTorrent benc)
+data FileInfo = FileInfo
+	{path :: FilePath
+	,fileLength :: Int64
+    }
+    deriving Show
+
+openTorrent :: FilePath -> IO TorrentFile
+openTorrent torrentPath =
+    handle (\ (ErrorCall m) -> error (torrentPath ++ " is not a valid .torrent file:\n\t" ++ m)) $
+    do fileData <- BSL.readFile torrentPath
+       case bRead fileData of
+           Nothing -> error "Not a torrent file"
+           Just benc -> return $ readTorrent $ benc
+       --the binary instance for BEncode is broken
 
 readTorrent :: BEncode -> TorrentFile
-readTorrent (BDict dict) = TorrentFile {
-	info = readTorrentInfo (dict ! "info"),
-	announce = 
+readTorrent (BDict dict) = TorrentFile
+	{announce = bStrToString $ dict ! "announce"
+    ,creationDate = fmap bIntToTime $ Map.lookup "creation date" dict
+    ,comment = fmap bStrToString $ Map.lookup "comment" dict
+    ,pieceLen = bInt $ info ! "piece length"
+    ,pieces = bStrToPieces $ info ! "pieces"
+    ,fileInfo = getFilesInfo info
 	}
-readTorrent _ = error "Broken torrent file"
+    where BDict info = dict ! "info"
+readTorrent _ = error "expected a dictionary"
 
-bStrToString :: 
+getFilesInfo :: Map.Map String BEncode -> FilesInfo
+getFilesInfo info
+    | "files" `Map.member` info = MultiFile (bStrToString $ info ! "name") fileInfos
+    | otherwise = SingleFile FileInfo {path = bStrToString $ info ! "name"
+                                      ,fileLength = bInt $ info ! "length"
+                                      }
+    where BList files = info ! "files"
+          fileInfos = map getFileInfo files
+
+getFileInfo :: BEncode -> FileInfo
+getFileInfo (BDict file) = FileInfo {path = bListToPath $ file ! "path"
+                                    ,fileLength = bInt $ file ! "length"
+                                    }
+getFileInfo _ = error "expected a dictionary"
+
+bStrToString :: BEncode -> String
+bStrToString (BString s) = toString (toStrict s)
+bStrToString _ = error "expected a string"
+
+bIntToTime :: BEncode -> UTCTime
+bIntToTime (BInt i) = posixSecondsToUTCTime (fromIntegral i)
+bIntToTime _ = error "expected an integer"
+
+bInt :: Integral a => BEncode -> a
+bInt (BInt i) = fromIntegral i
+bInt _ = error "expected an integer"
+
+--break the ByteString into a list of 20-byte SHA1 pieces
+bStrToPieces :: BEncode -> [BS.ByteString]
+bStrToPieces (BString s) = unfoldr nextpiece (toStrict s)
+    where nextpiece s' | BS.null s' = Nothing
+                       | otherwise = Just (BS.splitAt 20 s') 
+          --unfoldr want a pair (output, next) which splitAt provides
+bStrToPieces _ = error "expected a string"
+
+bListToPath :: BEncode -> FilePath
+bListToPath (BList dirs) = joinPath (map bStrToString dirs)
+bListToPath _ = "expected a list of strings"
