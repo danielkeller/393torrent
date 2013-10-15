@@ -126,15 +126,18 @@ Very important in this TorrentFileInfo object will be a Tracker object, which wi
 \caption{The objects involved in the second stage of an application run}
 \end{figure}
 
-The second stage begins immediately after the first stage completes.   In this stage, the TorrentApplication creates a TorrentDownloader which is responsible for downloading the contents of the torrent.
+The second stage begins immediately after the first stage completes.   In this stage, the TorrentApplication creates a TorrentDownloader which is responsible for downloading the contents of the torrent.  The TorrentDownloader takes in a TorrentFileInfo object which has information about available trackers.  When the number of active peers falls below a preconfigured threshold (choice of this threshold has been empirically shown to affect performance, 30 is a good default), the TorrentDownloader will query the trackers for additional peers, and create Peer objects for each of these peers.  These Peer objects are responsible for handling communication with the peers, coordinated by the TorrentDownloader.  This central coordination will ensure that no file pieces are downloaded multiple times.\\
+
+One operation available on Peer objects will be the download\_piece(int piece\_num) operation.  When a piece finishes downloading, a FilePiece object will be created.  Over time, FilePiece objects will be collected into FilePart objects (in order to reduce disk writes), which will be serialized to disk.  Once all pieces are done downloading (a condition recognized by the TorrentDownloader), the FilePart objects will be loaded, one by one, and have their contents written into the file(s) that the .torrent file specifies.
 
 \subsection{File Seeding Stage}
 \begin{figure}[h]
 \centering
-\includegraphics[scale=.5]{stepTwo.png}
+\includegraphics[scale=.5]{stepThree.png}
 \caption{The objects involved in the third stage of an application run}
 \end{figure}
 
+The third stage begins immediately after the first stage completes, and may live indefinitely (until killed) if the user specifies on the command line that they wish to seed indefinitely.  In this stage, the TorrentApplication creates a TorrentUploader, which loads the state of the download from disk (by reading the FilePieces).  It then opens a port for connections from peers (by default, this port will be 6881, but this will be configurable), and waits for connections to begin.  When connections are initiated, the TorrentUploader will create new Peer objects for each connection (since peers are allowed only one connection each) and will serve requests by reading the FilePieces from disk.  This is done to reduce memory overhead; if the FilePieces were held in memory so that upload requests would not cause disk reads, we would need to hold at least the total filesize in memory.  Since torrents are often used for very large downloads (in some cases, multiple terabytes), this is infeasible.
 
 \section{Thread Model}
 
