@@ -3,6 +3,8 @@
 \usepackage{fullpage} %1in margins
 \usepackage{tabularx}
 \usepackage{hyperref}
+\usepackage{tikz} % for diagrams
+\usetikzlibrary{automata,positioning}
 
 \newcommand{\app}{\sc{393torrent}}
 
@@ -15,7 +17,20 @@
 \maketitle
 
 \begin{abstract}
-I'm going to find that diagram package in a bit...
+\begin{tikzpicture}[shorten >=1pt,node distance=3cm,on grid,auto]
+	\node[state] (s) {};
+	\node[state] (a1) [above=of s] {things!};
+	\node[state] (b1) [right=of s] {};
+	\node[state] (b2) [above right=of b1] {stuff!};
+	\node[state] (b3) [below right=of b1] {};
+	\path[->]
+	(s)  edge [bend right] node [right] {wheee} (a1)
+	     edge node [below] {woahhh} (b1)
+	(a1) edge [bend right] node [left] {duude} (s)
+	(b1) edge node {} (b2)
+	(b2) edge node {} (b3)
+	(b3) edge node {} (b1);
+\end{tikzpicture}
 
 The software requirements specification (SRS) specifies all user stories (i.e. functional requirements) as well as nonfunctional requirements. These requirements are used in iteration planning as well as acceptance testing.  This document should be used by the members of the 393torrent team, who will implement and verify the functionality of the BitTorrent client.
 \end{abstract}
