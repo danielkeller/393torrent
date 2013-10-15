@@ -86,10 +86,12 @@ In TCP, a client must remember state information such as:
 \item peer\_choking: peer is choking this client
 \item peer\_interested: peer is interested in this client
 Client connections start out as "choked" and "not interested". In other words:
+\begin{itemize}
 \item am\_choking = 1
 \item am\_interested = 0
 \item peer\_choking = 1
 \item peer\_interested = 0
+\end{itemize}
 \end{itemize}
 
 \subsection{Handshake}
@@ -114,7 +116,7 @@ As opposed to traditional file distribution methods, Bittorrent has fasted distr
 
 Wiki.theory.org Contributors. (2013 July 26) `` ''Bittorrent Protocol Specification v1.0`` ''. [Online]. Available: https://wiki.theory.org/BitTorrentSpecification
 
-Ross Kurose. `` ''Chapter 2 Application Layer`` ''. Computer Networking A Top-Down Approach 6th edition
+Ross, Kurose. (2012)  `` ''Chapter 2 Application Layer`` ''. Computer Networking: A Top-Down Approach 6th edition
 
 \section{App Architecture}
 A single run of this application will progress through three stages.  They are, in brief, the torrent acquisition stage, the file download stage, and the file seeding stage.  In the first stage, the application will determine what trackers it should connect to, and which files it is attempting to download.  The output of this stage will be an object containing the trackers that will be used for this torrent download, and the information about the torrent download itself.  This output is used as input to the second stage of the application run, which will proceed with the connections to peers and begin downloading individual "pieces" (as defined by the bittorrent spec) from those peers.  After several sequential pieces have been received, those will be combined into a "part", which will be saved to disk.  After all pieces have been downloaded, the parts which have been saved to disk will be combined into the output file.  In the final stage, the pieces will be served to other peers which request them.
@@ -213,5 +215,7 @@ Nathan McKinley created the app architecture section and diagrams.
 \textbf{Comment} & \textbf{Reported By} & \textbf{Fixed By} \\
 No Issues seen& Kenneth Link& N/A \\
 Abstract is for wrong document & Dan Keller & Dan Keller \\
+Section 2.3, indentation error & Nathan McKinley & Nathan McKinley \\
+Section 2.5, incorrect citations & Nathan McKinley & Nathan McKinley \\
 \end{tabularx}
 \end{document}
