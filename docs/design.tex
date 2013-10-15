@@ -94,6 +94,47 @@ Wiki.theory.org Contributors. (2013 July 26) “Bittorrent Protocol Specificatio
 Ross Kurose. “Chapter 2 Application Layer”. Computer Networking A Top-Down Approach 6th edition
 
 \section{App Architecture}
+A single run of this application will progress through three stages.  They are, in brief, the torrent acquisition stage, the file download stage, and the file seeding stage.  In the first stage, the application will determine what trackers it should connect to, and which files it is attempting to download.  The output of this stage will be an object containing the trackers that will be used for this torrent download, and the information about the torrent download itself.  This output is used as input to the second stage of the application run, which will proceed with the connections to peers and begin downloading individual "pieces" (as defined by the bittorrent spec) from those peers.  After several sequential pieces have been received, those will be combined into a "part", which will be saved to disk.  After all pieces have been downloaded, the parts which have been saved to disk will be combined into the output file.  In the final stage, the pieces will be served to other peers which request them.
+
+This third stage will begin at the same time as the second stage, since pieces which have been downloaded already can be served up even before the entire file has been received.  In some sense, this is the reason that the bittorrent protocol leads to decreased time to complete a download.  It will also be continued after download is complete, if the user has specified that they would like to continue seeding indefinitely.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=.5]{stageDiagram.png}
+\caption{The three stages of an application run}
+\end{figure}
+
+\subsection{Torrent Acquisition Stage}
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=.5]{stepOne.png}
+\caption{The four objects involved in the first stage of an application run}
+\end{figure}
+
+In this first stage of an application run, the TorrentApplication (our main class) will create a TorrentFileRetriever.  This object is responsible for understanding the command-line arguments passed to the application, whether they be a magnet link or the location of a file in the filesystem.  Since we seek to be cross-platform, we will need to defer to the OS for this kind of understanding; we'll need to understand '/home/username/something.torrent' on unix as well as as 'C:\textbackslash Documents And Settings\textbackslash Username\textbackslash something.torrent' on Windows.  This is easily possible due to python's os.path module, which understands cross-platform filenames.\\
+
+The TorrentFileRetriever will either read or download information about the torrent that the user seeks to download, depending on input.  In either case, it will return a TorrentFileInfo object, which will contain information that the rest of the application will require in order to function.  This information includes the SHA1 hash of the 'info' dict contained in the .torrent file, as well as several other key pieces of information (announce URL, etc).  See Section One for details on the information which will need to be present.\\
+
+Very important in this TorrentFileInfo object will be a Tracker object, which will have the capability to connect to the torrent tracker(s) specified in the .torrent file.  There are very specific messages that need to be sent to the trackers at intervals during download; the Tracker object will be capable of sending these and reading their responses.
+
+\subsection{File Download Stage}
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=.5]{stepTwo.png}
+\caption{The objects involved in the second stage of an application run}
+\end{figure}
+
+The second stage begins immediately after the first stage completes.   In this stage, the TorrentApplication creates a TorrentDownloader which is responsible for downloading the contents of the torrent.
+
+\subsection{File Seeding Stage}
+\begin{figure}[h]
+\centering
+\includegraphics[scale=.5]{stepTwo.png}
+\caption{The objects involved in the third stage of an application run}
+\end{figure}
+
 
 \section{Thread Model}
 
@@ -107,7 +148,7 @@ Created document outline and
 \subsection{Kenneth Link}
 
 \subsection{Nathan McKinley}
-
+Nathan McKinley created the app architecture section and diagrams.
 \subsection{Ross Nanopoulos}
 
 
