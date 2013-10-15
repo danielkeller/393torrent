@@ -6,7 +6,7 @@
 \usepackage{tikz} % for diagrams
 \usetikzlibrary{automata,positioning}
 
-\newcommand{\app}{\sc{393torrent}}
+\newcommand{\app}{\textsc{393torrent}}
 
 \begin{document}
 
@@ -17,29 +17,14 @@
 \maketitle
 
 \begin{abstract}
-\begin{tikzpicture}[shorten >=1pt,node distance=3cm,on grid,auto]
-	\node[state] (s) {};
-	\node[state] (a1) [above=of s] {things!};
-	\node[state] (b1) [right=of s] {};
-	\node[state] (b2) [above right=of b1] {stuff!};
-	\node[state] (b3) [below right=of b1] {};
-	\path[->]
-	(s)  edge [bend right] node [right] {wheee} (a1)
-	     edge node [below] {woahhh} (b1)
-	(a1) edge [bend right] node [left] {duude} (s)
-	(b1) edge node {} (b2)
-	(b2) edge node {} (b3)
-	(b3) edge node {} (b1);
-\end{tikzpicture}
-
-The software requirements specification (SRS) specifies all user stories (i.e. functional requirements) as well as nonfunctional requirements. These requirements are used in iteration planning as well as acceptance testing.  This document should be used by the members of the 393torrent team, who will implement and verify the functionality of the BitTorrent client.
+The design document details the structure and low-level functioning of the software. It it written to fulfill the requirements specification, and to guide the implementation of the software. If some part of the design changes, the document must be changed as well to reflect it. The document is also used to facilitate maintenance of the software.
 \end{abstract}
 
 \tableofcontents
 \pagebreak
 
 \section{Overview}
-The BitTorrent client (393torrent) will allow users to download, create, and seed torrent files.  It will enable them to achieve the full functionality of a BitTorrent client in a lightweight form.  The primary objective of this BitTorrent client is to offer a free and open source alternative--without advertisements--to the current heavyweight clients available.  Specific goals of 393torrent can be found in the vision and scope document.
+The BitTorrent client (\app) will allow users to download, create, and seed torrent files.  It will enable them to achieve the full functionality of a BitTorrent client in a lightweight form.  The primary objective of this BitTorrent client is to offer a free and open source alternative--without advertisements--to the current heavyweight clients available.  Specific goals of 393torrent can be found in the vision and scope document.
 
 \section{Bittorrent Protocol}
 
@@ -178,6 +163,36 @@ One operation available on Peer objects will be the download\_piece(int piece\_n
 The third stage begins immediately after the first stage completes, and may live indefinitely (until killed) if the user specifies on the command line that they wish to seed indefinitely.  In this stage, the TorrentApplication creates a TorrentUploader, which loads the state of the download from disk (by reading the FilePieces).  It then opens a port for connections from peers (by default, this port will be 6881, but this will be configurable), and waits for connections to begin.  When connections are initiated, the TorrentUploader will create new Peer objects for each connection (since peers are allowed only one connection each) and will serve requests by reading the FilePieces from disk.  This is done to reduce memory overhead; if the FilePieces were held in memory so that upload requests would not cause disk reads, we would need to hold at least the total filesize in memory.  Since torrents are often used for very large downloads (in some cases, multiple terabytes), this is infeasible.
 
 \section{Thread Model}
+\begin{figure}[h]
+\centering
+\includegraphics[scale=.5]{threads.png}
+\caption{Communication between threads}
+\end{figure}
+
+As this is a network application, threads are used to wait for communication from other hosts. The three main threads are the accept loop, the recv loop, and the main loop.
+
+\subsection{Accept Thread}
+The purpose of the accept loop is to wait on incoming connections from peers. The TorrentDownloader object sets up a listening socket on port 6881, and then spawns this thread. The thread calls \texttt{accept}, and sleeps until it recieves a connection, at which point it spawns a new Peer object for the connection, and calls accept again. The Peer is placed in a global list of peers, for the main loop to process.
+
+\subsection{Recv Thread}
+The purpose of the recv loop is to wait for incoming data from peers. It recieves messages regarding choking and unchoking, as well as interest and disinterest, and stores them in the peer's internal state.
+
+Additionally, it recieves piece data, and forwards this data to the main loop for processing and storage. Pieces are placed in a concurrent queue, and the main loop takes them and assigns them to FileParts.
+
+Each thread blocks on a recv call on its respective peer.
+
+\subsection{Main Thread}
+The main loop handles all functionality that doesn't need to be in a separate thread. It tracks what parts of the file have been downloaded, and decides which peers to send requests to. Although the recv loop gets messages from peers, the main loop sends them. Additionally, it controls the interested and choked state of the peers.
+
+The main loop also controls communication with the tracker, and initiates connections to peers. Thus, both the main loop and the accept loop create Peer objects. 
+
+The main thread, unlike the other threads, does not block on an socket api call. Rather, it connects to peers until it determines it has connected to enough, and then blocks until either
+\begin{enumerate}
+\item The accept thread creates a new peer, and the program needs to know if the peer should be communicated with at this time. Peer's constructor will wake up the thread.
+\item A peer changes its choking or interest state and wakes up the main thread.
+\item A piece arrives.
+\end{enumerate}
+Once the thread has woken up, it will determine if its state has changed in a way that warrents further action.
 
 \section{Classes in Detail}
 
@@ -185,7 +200,7 @@ The third stage begins immediately after the first stage completes, and may live
 \section{Author Contributions}
 This section provides the details to what each author contributed to the vision and scope document, as requested per professor Podgurski.
 \subsection{Daniel Keller}
-Created document outline and 
+Created document outline and threading model.
 \subsection{Kenneth Link}
 Kenneth Created the Protocol secttion
 \subsection{Nathan McKinley}
@@ -196,6 +211,7 @@ Nathan McKinley created the app architecture section and diagrams.
 \section{Inspection}
 \begin{tabularx}{\textwidth}{X c c}
 \textbf{Comment} & \textbf{Reported By} & \textbf{Fixed By} \\
-\textbf{No Issues seen} & \textbf{Kenneth Link} & \textbf{N/A} \\
+No Issues seen& Kenneth Link& N/A \\
+Abstract is for wrong document & Dan Keller & Dan Keller \\
 \end{tabularx}
 \end{document}
