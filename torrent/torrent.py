@@ -1,6 +1,7 @@
 import os
 import argparse
 import bencode
+import fileinfo
 
 class TorrentApplication(object):
     def __init__(self, torrent_file, seed):
@@ -8,6 +9,8 @@ class TorrentApplication(object):
         self.seed = seed
 
     def start(self):
+		self.file_info.tracker.begin_download()
+		print self.file_info.tracker.peers
 
 
 class TorrentFileRetriever(object):
@@ -29,8 +32,6 @@ class TorrentFileRetriever(object):
     def handle_magnet_link(self, magnet_link_url):
         raise NotImplemented
 
-
-
 class TorrentDownloader(object):
     pass
 
@@ -44,5 +45,8 @@ if __name__ == '__main__':
     parser.add_argument('--seed', dest='seed', action='store_true',
                    default=False,
                    help='seed forever (default: seed while downloading)')
+	parser.add_argument('--port', dest='fileinfo.PORT', action='store_value',
+					default=6881,
+					help='Optionally set the port for the client to listen on')
     parser.parse_args()
     TorrentApplication(parser.torrent_file, parser.seed).start()
