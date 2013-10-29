@@ -17,6 +17,7 @@ class TorrentFileInfo(object):
         self.pieces = [pieces[i:i+20] for i in range(0, len(pieces), 20)]
         self.piece_length = torrent_dict['info']['piece length']
         self.info_hash = self.find_info_hash(torrent_file_text)
+        self.peer_id = '393Torrent' + os.urandom(9)
         self.files = self.get_files_from_info_dict(torrent_dict['info'])
         self.total_size = sum([file.length for file in self.files])
         self.bytes_downloaded = 0
@@ -47,12 +48,14 @@ class TorrentFileInfo(object):
         else:
             return [downloadfile(info_dict['length'], info_dict['name'])]
 
+    def got_piece(self, index, begin, block):
+        pass
+
 
 class TorrentTracker(object):
     def __init__(self, tracker_url, torrent):
         self.tracker_url = tracker_url
         self.torrent_info = torrent
-        self.peer_id = '393Torrent' + os.urandom(9)
         self.tracker_id = None
         self.complete = 0
         self.incomplete = 0
