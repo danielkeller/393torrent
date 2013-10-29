@@ -51,7 +51,6 @@ class TorrentFileInfo(object):
     def got_piece(self, index, begin, block):
         pass
 
-
 class TorrentTracker(object):
     def __init__(self, tracker_url, torrent):
         self.tracker_url = tracker_url

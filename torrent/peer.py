@@ -65,80 +65,88 @@ class PeerConn(asynchat.async_chat):
         msglen = struct.calcsize('>c' + fmt)
         self.push(struct.pack('>Lc' + fmt, msglen, msgid, *args))
 
+    #handle state machine
+    def found_terminator(self):
+        if self.state == _State.PreHandshake:
+            self._get_hslen()
+            self.state = _State.Handshake
+            self.set_terminator(19 + 48) #rest of handshake
+        elif self.state == _State.Handshake:
+            self._get_handshake()
+            self.state = _State.PreMessage
+            self.set_terminator(4) #messages are length-prefixed with 4 bytes
+        elif self.state == _State.PreMessage:
+            self._get_msglen()
+        else:
+            self._get_message()
+            self.set_terminator(4)
+            self.state = _State.PreMessage
+
     def keepalive(self):
         self.push('\x00\x00\x00\x00')
 
-    def found_terminator(self):
+    def _get_hslen(self):
+        pstrlen, = struct.unpack('B', self._get_data())
+        if pstrlen != 19: #length must be 19
+            self.close_when_done()
+            return
 
-        if self.state == _State.PreHandshake:
-            pstrlen, = struct.unpack('B', self._get_data())
-            if pstrlen != 19: #length must be 19
+    def _get_handshake(self):
+        pstr, reserved, self.info_hash, self.peer_id = struct.unpack('>19sq20s20s', self._get_data())
+        if pstr != 'BitTorrent protocol': #protocol string must be this
+            self.close_when_done()
+            print 'hanshake failed'
+            return
+        print 'hanshake successful'
+
+    def _get_msglen(self):
+        msglen, = struct.unpack('>L', self._get_data())
+        self.seen = time() #treat all messages as keep-alives
+        if msglen != 0:
+            self.set_terminator(msglen) #rest of message
+            self.state = _State.Message
+
+    def _get_message(self):
+        data = self._get_data()
+        print repr(data)
+        msgid = data[0]
+        if msgid == '0': #choke
+            self.peer_choking = True
+            print 'choked'
+        if msgid == '1': #unchoke
+            self.peer_choking = False
+            print 'unchoked'
+        if msgid == '2': #interested
+            self.peer_interested = True
+            print 'interested'
+        if msgid == '3': #uninstrested
+            self.peer_interested = False
+            print 'uninterested'
+        if msgid == '4': #have
+            index, = struct.unpack('>L', data[1:])
+            self.bitfield[index] = True
+            print 'have', index, self.bitfield
+        if msgid == '5': #bitfield
+            if len(data[1:]) !=  bitarray.bits2bytes(len(bitfield)): #wrong length
                 self.close_when_done()
                 return
-            self.state = _State.Handshake
-            self.set_terminator(pstrlen + 48) #rest of handshake
-
-        elif self.state == _State.Handshake:
-            pstr, reserved, self.info_hash, self.peer_id = struct.unpack('>19sq20s20s', self._get_data())
-            if pstr != 'BitTorrent protocol': #protocol string must be this
-                self.close_when_done()
-                print 'hanshake failed'
-                return
-            #prepare to receive message
-            self.set_terminator(4) #messages are length-prefixed with 4 bytes
-            print 'hanshake successful'
-            self.state = _State.PreMessage
-
-        elif self.state == _State.PreMessage:
-            msglen, = struct.unpack('>L', self._get_data())
-            self.seen = time() #treat all messages as keep-alives
-            if msglen != 0:
-                self.set_terminator(msglen) #rest of message
-                self.state = _State.Message
-
-        else:
-            data = self._get_data()
-            print repr(data)
-            msgid = data[0]
-            if msgid == '0': #choke
-                self.peer_choking = True
-                print 'choked'
-            if msgid == '1': #unchoke
-                self.peer_choking = False
-                print 'unchoked'
-            if msgid == '2': #interested
-                self.peer_interested = True
-                print 'interested'
-            if msgid == '3': #uninstrested
-                self.peer_interested = False
-                print 'uninterested'
-            if msgid == '4': #have
-                index, = struct.unpack('>L', data[1:])
-                self.bitfield[index] = True
-                print 'have', index, self.bitfield
-            if msgid == '5': #bitfield
-                if len(data[1:]) !=  bitarray.bits2bytes(len(bitfield)): #wrong length
-                    self.close_when_done()
-                    return
-                self.bitfield.frombytes(data[1:])
-                print 'bitfield', index, self.bitfield
-            if msgid == '6': #request
-                if not self.am_choking:
-                    self.requests.put(struct.unpack('>LLL', data[1:13]))
-                    print 'request', repr(self.requests.get())
-                    self.requests.task_done()
-            if msgid == '7': #piece
-                block = data[9:]
-                index, begin = struct.unpack('>LL', data[1:9])
-                print 'got piece', repr( (index, begin, block) )
-                #self.fileinfo.got_piece(index, begin, block)
-            if msgid == '8': #cancel
-                print 'cancel', repr(struct.unpack('>LLL', data[1:13]))
-                #DK how to i get rid of individual items from a queue?
-            if msgid == '9': #dht port
-                pass
-            self.set_terminator(4)
-            self.state = _State.PreMessage
+            self.bitfield.frombytes(data[1:])
+            print 'bitfield', index, self.bitfield
+        if msgid == '6': #request
+            if not self.am_choking:
+                self.requests.put(struct.unpack('>LLL', data[1:13]))
+                print 'request', repr(self.requests.get())
+                self.requests.task_done()
+        if msgid == '7': #piece
+            block = data[9:]
+            index, begin = struct.unpack('>LL', data[1:9])
+            print 'got piece', repr( (index, begin, block) )
+            #self.fileinfo.got_piece(index, begin, block)
+        if msgid == '8': #cancel
+            print 'cancel', repr(struct.unpack('>LLL', data[1:13]))
+            #DK how to i get rid of individual items from a queue?
+        if msgid == '9': #dht port
+            pass
 
     def choke(self, state):
         self.am_choking = state
