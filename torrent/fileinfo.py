@@ -58,16 +58,16 @@ class TorrentTracker(object):
         self.incomplete = 0
         self.peers = []
         self.interval = 60 * 10
-        
+
     def get_basic_params(self):
         params = {}
         params['info_hash'] = self.torrent_info.info_hash
         params['peer_id'] = self.peer_id
         params['port'] = PORT
-        params['uploaded'] = self.torrent_info.bytes_downloaded
-        params['downloaded'] = self.torrent_info.bytes_uploaded
+        params['downloaded'] = self.torrent_info.bytes_downloaded
+        params['uploaded'] = self.torrent_info.bytes_uploaded
         params['left'] = self.torrent_info.total_size - self.torrent_info.bytes_downloaded
-        params['compact'] = 0
+        params['compact'] = 1
         params['no_peer_id'] = 1
         if self.tracker_id:
             params['tracker_id'] = self.tracker_id
@@ -78,25 +78,33 @@ class TorrentTracker(object):
         if event:
             params['event'] = event
         response = requests.get(self.tracker_url, params = params)
+        print response.url
         self._process_response(response.text)
-        
+
     def _process_response(self, response_text):
         response_dict = bencode.bdecode(response_text)
         if 'failure reason' in response_dict:
             raise IOException(response_dict['failure reason'])
         self.complete = response_dict['complete']
         self.incomplete = response_dict['incomplete']
-        self.peers = [TorrentPeer(peer['ip'], peer['port']) for peer in response_dict['peers']]
+        if isinstance(response_dict['peers'], dict):
+            # dict representation
+            self.peers = [TorrentPeer(peer['ip'], peer['port']) for peer in response_dict['peers']]
+        elif isinstance(response_dict['peers'], basestring):
+            # compact representation
+            peers = response_dict['peers']
+            peerbytes = [peers[i:i+6] for i in range(0, len(peers), 6)]
+            self.peers = [TorrentPeer('.'.join(map(str, [ord(x) for x in peer[:4]])), ord(peer[4]) * 255 + ord(peer[5])) for peer in peerbytes]
         self.interval = response_dict['interval']
-        if 'tracker id' in self.response_dict:
-            self.tracker_id = self.response_dict['tracker id']        
+        if 'tracker id' in response_dict:
+            self.tracker_id = response_dict['tracker id']
 
     def update_tracker_on_progress(self):
         self._communicate()
-        
+
     def begin_download(self):
         self._communicate('started')
-    
+
     def end_download(self):
         self._communicate('stopped')
 
@@ -104,6 +112,9 @@ class TorrentPeer(object):
     def __init__(self, ip, port):
         self.ip = ip
         self.port = port
-        
+
     def __str__(self):
         return str({'ip' : self.ip, 'port' : self.port})
+
+    def __repr__(self):
+        return str(self)
