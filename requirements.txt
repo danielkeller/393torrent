@@ -1,3 +1,4 @@
 requests==2.0.0
 bencode==1.0
 bitarray==0.8.1
+coverage==3.7
