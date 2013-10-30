@@ -6,7 +6,5 @@ docs/*.gz
 docs/*.toc
 docs/*.out
 
-#haskell files
-*.prof
-dist
-*.lkshs
+#compiled python
+*.pyc
