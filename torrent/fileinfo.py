@@ -64,7 +64,7 @@ class TorrentTracker(object):
     def get_basic_params(self):
         params = {}
         params['info_hash'] = self.torrent_info.info_hash
-        params['peer_id'] = self.peer_id
+        params['peer_id'] = self.torrent_info.peer_id
         params['port'] = PORT
         params['downloaded'] = self.torrent_info.bytes_downloaded
         params['uploaded'] = self.torrent_info.bytes_uploaded
@@ -80,7 +80,6 @@ class TorrentTracker(object):
         if event:
             params['event'] = event
         response = requests.get(self.tracker_url, params = params)
-        print response.url
         self._process_response(response.text)
 
     def _process_response(self, response_text):
