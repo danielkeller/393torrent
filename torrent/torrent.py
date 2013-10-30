@@ -2,6 +2,9 @@ import os
 import argparse
 import bencode
 import fileinfo
+import peer
+import threading
+import asyncore
 
 class TorrentApplication(object):
     def __init__(self, torrent_file, seed):
@@ -11,7 +14,10 @@ class TorrentApplication(object):
     def start(self):
         self.file_info.tracker.begin_download()
         print self.file_info.tracker.peers
-
+        server = peer.PeerServer(fileinfo.PORT, self.file_info)
+        peers = [peer.PeerConn(self.file_info, hostport=(p.ip, p.port))
+                 for p in self.file_info.tracker.peers]
+        asyncore.loop()
 
 class TorrentFileRetriever(object):
     def __init__(self, torrent_file):

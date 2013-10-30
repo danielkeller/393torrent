@@ -32,7 +32,11 @@ class PeerConn(asynchat.async_chat):
         if sock is None: #created as address
             asynchat.async_chat.__init__(self)
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.connect(hostport) #expects a host-port pair
+            try:
+                self.connect(hostport) #expects a host-port pair
+            except socket.error:
+                print "peer", hostport, "does not exist"
+                return
         else: #created as socket
             asynchat.async_chat.__init__(self, sock=sock)
         #handshake is length-prefixed with one byte
@@ -58,6 +62,7 @@ class PeerConn(asynchat.async_chat):
 
     #just use the default mechanism
     def collect_incoming_data(self, data):
+        print repr(data)
         self._collect_incoming_data(data)
 
     #helper that adds the message id and length

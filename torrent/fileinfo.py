@@ -4,6 +4,7 @@ import requests
 import time
 import collections
 import os
+import struct
 
 PORT = 6881
 
@@ -64,7 +65,7 @@ class TorrentTracker(object):
     def get_basic_params(self):
         params = {}
         params['info_hash'] = self.torrent_info.info_hash
-        params['peer_id'] = self.peer_id
+        params['peer_id'] = self.torrent_info.peer_id
         params['port'] = PORT
         params['downloaded'] = self.torrent_info.bytes_downloaded
         params['uploaded'] = self.torrent_info.bytes_uploaded
@@ -80,10 +81,12 @@ class TorrentTracker(object):
         if event:
             params['event'] = event
         response = requests.get(self.tracker_url, params = params)
+        response.encoding = 'ascii' #suprise! some trackers are broken!
         print response.url
-        self._process_response(response.text)
+        self._process_response(response.content)
 
     def _process_response(self, response_text):
+        print repr(response_text)
         response_dict = bencode.bdecode(response_text)
         if 'failure reason' in response_dict:
             raise IOException(response_dict['failure reason'])
@@ -94,9 +97,11 @@ class TorrentTracker(object):
             self.peers = [TorrentPeer(peer['ip'], peer['port']) for peer in response_dict['peers']]
         elif isinstance(response_dict['peers'], basestring):
             # compact representation
-            peers = response_dict['peers']
+            peers = response_dict['peers'] #.encode('utf8') #it comes back as unicode for some reason
             peerbytes = [peers[i:i+6] for i in range(0, len(peers), 6)]
-            self.peers = [TorrentPeer('.'.join(map(str, [ord(x) for x in peer[:4]])), ord(peer[4]) * 255 + ord(peer[5])) for peer in peerbytes]
+            peervals = [struct.unpack('>BBBBH', p) for p in peerbytes]
+            self.peers = [TorrentPeer('{0}.{1}.{2}.{3}'.format(w, x, y, z), port)
+                          for w, x, y, z, port in peervals]
         self.interval = response_dict['interval']
         if 'tracker id' in response_dict:
             self.tracker_id = response_dict['tracker id']
