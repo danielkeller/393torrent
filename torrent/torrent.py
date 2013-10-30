@@ -10,6 +10,8 @@ class TorrentApplication(object):
 
     def start(self):
         self.file_info.tracker.begin_download()
+        print 'Successfully connected!  Found %i peers.' % len(self.file_info.tracker.peers)
+        print 'Peer list:'
         print self.file_info.tracker.peers
 
 
@@ -22,8 +24,10 @@ class TorrentFileRetriever(object):
         # download the file at the magnet link
         try:
             file_text = open(self.torrent_file).read()
+            print 'Found file.  Downloading torrent information...'
             return self.handle_torrent_file(file_text)
         except IOError:
+            print 'There is no file available at %s, treating it as a magnet link...' % (self.torrent_file,)
             return self.handle_magnet_link(self.torrent_file)
 
     def handle_torrent_file(self, torrent_file_text):

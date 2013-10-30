@@ -79,7 +79,9 @@ class TorrentTracker(object):
         params = self.get_basic_params()
         if event:
             params['event'] = event
+        print 'Communicating with tracker at %s' % (self.tracker_url,)
         response = requests.get(self.tracker_url, params = params)
+        print 'Response received!  Processing...'
         self._process_response(response.text)
 
     def _process_response(self, response_text):
@@ -104,6 +106,7 @@ class TorrentTracker(object):
         self._communicate()
 
     def begin_download(self):
+        print 'Beginning download...'
         self._communicate('started')
 
     def end_download(self):
@@ -118,4 +121,4 @@ class TorrentPeer(object):
         return str({'ip' : self.ip, 'port' : self.port})
 
     def __repr__(self):
-        return str(self)
+        return '<TorrentPeer' + str(self) + '>'
