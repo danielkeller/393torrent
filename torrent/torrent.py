@@ -59,52 +59,52 @@ class TorrentDownloader(object):
                 break
             try:
                 print 'connect', p
-                self.peers += [peer.PeerConn(self.fileinfo, self.queue, hostport=(p.ip, p.port))]
+                self.peers += [peer.PeerConn(self.fileinfo, self, hostport=(p.ip, p.port))]
             except socket.error as e:
                 print e
-        print 'FIXME!!!'
-#-----------------------------------------------------------------------------------------------------------------
-        #for some reason, this doesn't work in a separate thread
-        #we're gonna want to figure this out tomorrow. but until then, sleep
-        asyncore.loop()
 
     def get_rarest_piece_had_by(self, peer):
         id_to_have_map = {}
         for idx, has in enumerate(peer.bitfield):
-            id_to_have_map[idx] = 1
+            if not self.pieces[piece_id].is_fully_requested:
+                id_to_have_map[idx] = 1
 
         for otherpeer in self.peers:
             for idx, has in enumerate(otherpeer.bitfield):
                 if idx in id_to_have_map:
                     id_to_have_map[idx] = id_to_have_map[idx] + 1
 
+        if not id_to_have_map:
+            return None
         piece_id = min(id_to_have_map, key=lambda x: id_to_have_map[x])
         return self.pieces[piece_id]
 
+    def got_piece(self, piece_id, block_begin, data):
+        block_id = block_begin / BLOCK_SIZE
+        self.pieces[piece_id].add_block(block_id, data)
+        if all(piece.is_complete):
+            self.close_all_peers()
+
+    def close_all_peers(self):
+        for peer in self.peers:
+            peer.close()
+
+        self.peers = []
+
+    def get_request_to_make(self, peer):
+        piece_to_get = self.get_rarest_piece_had_by(peer)
+        if not piece_to_get:
+            return None
+        block_idx = piece_to_get.get_next_block_id()
+        return piece_to_get, block_idx * BLOCK_SIZE, BLOCK_SIZE
+
+    def peer_closed(self, peer):
+        self.peers.remove(peer)
+        self.connect_to_peers()
+
     def start(self):
-        while True: #not all(piece.is_complete for piece in self.pieces):
-            self.connect_to_peers()
-            while not self.queue.empty():
-                piece_id, begin_byte, data = self.queue.get()
-                block_id = begin_byte / BLOCK_SIZE
-                self.pieces[piece_id].add_block(block_id, data)
-
-            peers_to_remove = []
-            for peer in self.peers:
-                if peer.closed:
-                    peers_to_remove.append(peer)
-                    continue
-                if peer.n_requests_in_flight > 10:
-                    continue
-                continue # following code needs other stuff to work
-                piece_to_get = self.get_rarest_piece_had_by(peer)
-                block_idx = piece_to_get.get_next_block_id()
-                peer.request(piece_to_get.piece_index, BLOCK_SIZE * block_idx, BLOCK_SIZE)
-
-            for peer in peers_to_remove:
-                self.peers.remove(peer)
-
-            time.sleep(1)
+        self.connect_to_peers()
+        asyncore.loop()
 
 class TorrentUploader(object):
     pass
