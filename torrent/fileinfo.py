@@ -22,7 +22,28 @@ class TorrentFileInfo(object):
         self.total_size = sum([file.length for file in self.files])
         self.bytes_downloaded = 0
         self.bytes_uploaded = 0
-        self.tracker = TorrentTracker(torrent_dict['announce'], self)
+        self.trackers = [[TorrentTracker(torrent_dict['announce'], self)]]
+        if 'announce-list' in torrent_dict:
+            self.trackers = [[TorrentTracker(d, self) for d in l] for l in torrent_dict['announce-list']]
+
+    def begin_download(self):
+        self.tracker_communicate(event='started')
+
+    def end_download(self):
+        self.tracker_communicate(event='stopped')
+
+    def tracker_communicate(self, event = None):
+        for equiv_list in self.trackers:
+            any_successes = False
+            for tracker in equiv_list:
+                try:
+                    tracker._communicate(event=event)
+                    any_successes = True
+                except IOError:
+                    pass
+            if any_successes:
+                break
+
 
     def find_info_hash(self, text):
         info_dict_start = text.find('4:infod') + len('4:info')
@@ -36,6 +57,7 @@ class TorrentFileInfo(object):
             except bencode.BTFailure:
                 pass
         info_string = text[info_dict_start:end]
+        bencode.bdecode(info_string)
         return hashlib.sha1(info_string).digest()
 
     def get_files_from_info_dict(self, info_dict):
@@ -61,6 +83,12 @@ class TorrentTracker(object):
         self.peers = []
         self.interval = 60 * 10
 
+    def __str__(self):
+        return '<TorrentTracker, %i peers>' % len(self.peers)
+
+    def __repr__(self):
+        return str(self)
+
     def get_basic_params(self):
         params = {}
         params['info_hash'] = self.torrent_info.info_hash
@@ -85,7 +113,8 @@ class TorrentTracker(object):
     def _process_response(self, response_text):
         response_dict = bencode.bdecode(response_text)
         if 'failure reason' in response_dict:
-            raise IOException(response_dict['failure reason'])
+            print response_dict['failure reason']
+            raise IOError(response_dict['failure reason'])
         self.complete = response_dict['complete']
         self.incomplete = response_dict['incomplete']
         if isinstance(response_dict['peers'], dict):

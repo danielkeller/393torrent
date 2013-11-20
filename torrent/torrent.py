@@ -9,9 +9,8 @@ class TorrentApplication(object):
         self.seed = seed
 
     def start(self):
-        self.file_info.tracker.begin_download()
-        print self.file_info.tracker.peers
-
+        self.file_info.begin_download()
+        print self.file_info.trackers
 
 class TorrentFileRetriever(object):
     def __init__(self, torrent_file):
@@ -45,8 +44,9 @@ if __name__ == '__main__':
     parser.add_argument('--seed', dest='seed', action='store_true',
                    default=False,
                    help='seed forever (default: seed while downloading)')
-    parser.add_argument('--port', dest='fileinfo.PORT', action='store',
+    parser.add_argument('--port', dest='port', action='store',
                     default=6881,
                     help='Optionally set the port for the client to listen on')
     args = parser.parse_args()
+    fileinfo.PORT = args.port
     TorrentApplication(args.torrent_file, args.seed).start()
