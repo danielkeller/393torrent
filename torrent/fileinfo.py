@@ -59,7 +59,6 @@ class TorrentFileInfo(object):
                 pass
         info_string = text[info_dict_start:end]
         bencode.bdecode(info_string)
-        print len(hashlib.sha1(info_string).digest())
         return hashlib.sha1(info_string).digest()
 
     def get_files_from_info_dict(self, info_dict):
@@ -110,7 +109,6 @@ class TorrentTracker(object):
         if event:
             params['event'] = event
         response = requests.get(self.tracker_url, params = params)
-        print response
         self._process_response(response.text)
 
     def _process_response(self, response_text):

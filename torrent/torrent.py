@@ -18,12 +18,12 @@ class TorrentFileRetriever(object):
 
     def retrieve(self):
         # either read the torrent file if it's a file or
-        # download the file at the magnet link
         try:
             file_text = open(self.torrent_file).read()
             return self.handle_torrent_file(file_text)
-        except IOError:
-            return self.handle_magnet_link(self.torrent_file)
+        except IOError as e:
+            print "Sorry!  File doesn't appear to be readable!"
+            print "Error:  " + str(e)
 
     def handle_torrent_file(self, torrent_file_text):
         return fileinfo.TorrentFileInfo(torrent_file_text)
