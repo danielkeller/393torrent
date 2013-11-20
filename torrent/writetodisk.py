@@ -3,14 +3,13 @@ import os
 from gi.repository import GLib
 
 class download_directory_manager(object):
-    
-    
-    def __init__(info_dict):
+    def __init__(self, info_dict, fileinfo):
                                                     # get the users downlaods directory
                                                     # edit the downloads dir for a test file downlaod
-    self.downloads_dir = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOWNLOAD)
-    os.path.join(downloads_dir, "testdownload")
-    if not os.path.exists(downlaods_dir):
+	self.fileinfo = fileinfo
+    self.downloads_dir = os.getcwd()
+    self.downloads_dir = os.path.join(downloads_dir + [info_dict['name']])
+    if not os.path.exists(downloads_dir):
         os.makedirs(downloads_dir)
     
     self.files = get_files_from_info_dict(info_dict)# get the list of files and paths with the file length
@@ -18,39 +17,32 @@ class download_directory_manager(object):
         length = z['length']
         name = z['name']
         path = z['path']
-        createEmptyFile(self, length, path, name)
+        self.createEmptyFile(length, path, name)
     
     
     
-    def write_peice_to_file(self, piece):
-        index = piece.piece_index * piece.piece_length             # calculate the index of the piece
-        count = 0                                   # create a count variable to determine relative index of the file
-        total_written_bytes = 0
+    def write_piece_to_file(self, piece):
+        start_byte = piece.piece_index * self.fileinfo.piece_length             # calculate the index of the piece
+        current_byte = 0                                   # create a count variable to determine relative index of the file
+        bytes_to_write = piece.data
         for f in self.files:                        # for each file check the length to determine if the piece belongs in that file
             length = f['length']
             name = f['name']
             path = f['path']
-            count = count + length
-            if count >= index:                      # we know the piece contains information for this file
-                fout=open(name, wb)                 # open the file
-                f.seek(index - (count - length))    # seek to the index relative to the file
-                eof = length - (index - (count - length)) 
-                                                    # calculates the length of writable area within this file
-                h = 0
-                while h<eof and (total_written_bytes + h) < piece.data_length:    
-                                                    # while loop constraints:
-                                                    # 1. If we reach the end of the file stop writing we need to move on to the next one
-                                                    # 2. If we reach the end of the piece stop writing theres no more data dont go out of bounds
-                                                    # fix to work with rosses code
-                    f.write(piece.blocks[h])        # write the bytes one at a time POSSIBLY CHANGE TO BYTEARRAY for faster performance
-					h++
-                fout.close()                        # while conditions met = finished with this file
-                total_written_bytes += h            # how many bytes did we write in total? this keeps track of the total number of bytes that need to be written         
-                if total_written_bytes==piece.data_length: 
-                                                    # we now know the piece is completely finished being written
-                    break                           # we dont want to keep iterating through the files
-                
-            
+            if current_byte + length < start_byte:
+				current_byte = current_byte + length
+            else:                      # we know the piece contains information for this file
+				file_to_write = open(name, 'wb')
+				offset_this_file = start_byte - current_byte
+	            file_to_write.seek(offset_this_file)    # seek to the index relative to the file
+				n_bytes_this_file = length - offset_this_file
+				file_to_write.write(bytes_to_write[:n_bytes_this_file])
+				bytes_to_write = bytes_to_write[n_bytes_this_file:]
+				if not bytes_to_write:
+					break
+				else:
+					current_byte += length
+					start_byte = current_byte
     
                 
     def create_empty_file(self, length, path, name):        
@@ -59,7 +51,7 @@ class download_directory_manager(object):
         fullPath = os.path.join(filePath, name)     # Full path including name of the file
         if not os.path.exists(filePath):
             os.makedirs(filePath)                   # create the directory if it doesn't exist
-        fo = open(name, "wb")                       # open a new file to place peices into
+        fo = open(name, "wb")                       # open a new file to place pieces into
         f.seek(length-1)                            # find last bit in the file
         f.write("\0")                               # add one empty bit at the end
         f.close()                                   # place holder created
