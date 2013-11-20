@@ -33,17 +33,18 @@ class TorrentFileInfo(object):
         self.tracker_communicate(event='stopped')
 
     def tracker_communicate(self, event = None):
+        any_successes = False
         for equiv_list in self.trackers:
-            any_successes = False
             for tracker in equiv_list:
                 try:
                     tracker._communicate(event=event)
                     any_successes = True
-                except IOError:
+                except IOError as e:
                     pass
             if any_successes:
                 break
-
+        if not any_successes:
+            raise IOError("No trackers responded.")
 
     def find_info_hash(self, text):
         info_dict_start = text.find('4:infod') + len('4:info')
@@ -108,12 +109,12 @@ class TorrentTracker(object):
         if event:
             params['event'] = event
         response = requests.get(self.tracker_url, params = params)
+        print response
         self._process_response(response.text)
 
     def _process_response(self, response_text):
         response_dict = bencode.bdecode(response_text)
         if 'failure reason' in response_dict:
-            print response_dict['failure reason']
             raise IOError(response_dict['failure reason'])
         self.complete = response_dict['complete']
         self.incomplete = response_dict['incomplete']
