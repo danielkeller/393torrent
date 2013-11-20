@@ -45,7 +45,7 @@ class TorrentDownloader(object):
     def __init__(self, fileinfo, n_connections = 10):
         self.fileinfo = fileinfo
         self.n_connections = n_connections
-        self.pieces = [] #[FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
+        self.pieces =  [FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
         self.peers = []
         self.queue = Queue()
         #self.thr = threading.Thread(target = asyncore.loop)
@@ -82,7 +82,7 @@ class TorrentDownloader(object):
         return self.pieces[piece_id]
 
     def start(self):
-        while True: #not all(piece.is_complete for piece in self.pieces):
+        while not all(piece.is_complete for piece in self.pieces):
             self.connect_to_peers()
             while not self.queue.empty():
                 piece_id, begin_byte, data = self.queue.get()
@@ -96,7 +96,6 @@ class TorrentDownloader(object):
                     continue
                 if peer.n_requests_in_flight > 10:
                     continue
-                continue # following code needs other stuff to work
                 piece_to_get = self.get_rarest_piece_had_by(peer)
                 block_idx = piece_to_get.get_next_block_id()
                 peer.request(piece_to_get.piece_index, BLOCK_SIZE * block_idx, BLOCK_SIZE)
