@@ -59,6 +59,7 @@ class TorrentFileInfo(object):
                 pass
         info_string = text[info_dict_start:end]
         bencode.bdecode(info_string)
+        print len(hashlib.sha1(info_string).digest())
         return hashlib.sha1(info_string).digest()
 
     def get_files_from_info_dict(self, info_dict):
@@ -113,7 +114,10 @@ class TorrentTracker(object):
         self._process_response(response.text)
 
     def _process_response(self, response_text):
-        response_dict = bencode.bdecode(response_text)
+        try:
+            response_dict = bencode.bdecode(response_text)
+        except bencode.BTFailure:
+            raise IOError(response_text)
         if 'failure reason' in response_dict:
             raise IOError(response_dict['failure reason'])
         self.complete = response_dict['complete']
