@@ -1,7 +1,7 @@
 import asyncore, asynchat
 import socket
 import struct
-from bitarray import bitarray
+from bitarray import bitarray, bits2bytes
 from time import time, sleep
 from Queue import Queue
 
@@ -70,8 +70,8 @@ class PeerConn(asynchat.async_chat):
 
     #helper that adds the message id and length
     def message(self, msgid, fmt='', *args):
-        msglen = struct.calcsize('>c' + fmt)
-        self.push(struct.pack('>Lc' + fmt, msglen, msgid, *args))
+        msglen = struct.calcsize('>B' + fmt)
+        self.push(struct.pack('>LB' + fmt, msglen, msgid, *args))
 
     #handle state machine
     def found_terminator(self):
@@ -126,44 +126,44 @@ class PeerConn(asynchat.async_chat):
 
     def _get_message(self):
         data = self._get_data()
-        print repr(data)
-        msgid = data[0]
-        if msgid == '0': #choke
+        msgid = ord(data[0])
+        print 'message', msgid
+        if msgid == 0: #choke
             self.peer_choking = True
             print 'choked'
-        if msgid == '1': #unchoke
+        if msgid == 1: #unchoke
             self.peer_choking = False
             print 'unchoked'
-        if msgid == '2': #interested
+        if msgid == 2: #interested
             self.peer_interested = True
             print 'interested'
-        if msgid == '3': #uninstrested
+        if msgid == 3: #uninstrested
             self.peer_interested = False
             print 'uninterested'
-        if msgid == '4': #have
+        if msgid == 4: #have
             index, = struct.unpack('>L', data[1:])
             self.bitfield[index] = True
-            print 'have', index, self.bitfield
-        if msgid == '5': #bitfield
-            if len(data[1:]) !=  bitarray.bits2bytes(len(bitfield)): #wrong length
+            print 'have', index, 'for', self.bitfield.count()
+        if msgid == 5: #bitfield
+            if len(data[1:]) != bits2bytes(len(self.bitfield)): #wrong length
                 self.close_when_done()
                 return
             self.bitfield.frombytes(data[1:])
-            print 'bitfield', index, self.bitfield
-        if msgid == '6': #request
+            print 'bitfield, has', self.bitfield.count()
+        if msgid == 6: #request
             if not self.am_choking:
                 self.requests.put(struct.unpack('>LLL', data[1:13]))
                 print 'request', repr(self.requests.get())
                 self.requests.task_done()
-        if msgid == '7': #piece
+        if msgid == 7: #piece
             block = data[9:]
             index, begin = struct.unpack('>LL', data[1:9])
             print 'got piece', repr( (index, begin, block) )
             self.torrent_downloader.got_piece(index,begin,block)
-        if msgid == '8': #cancel
+        if msgid == 8: #cancel
             print 'cancel', repr(struct.unpack('>LLL', data[1:13]))
             #DK how to i get rid of individual items from a queue?
-        if msgid == '9': #dht port
+        if msgid == 9: #dht port
             pass
 
     def choke(self, state):
@@ -176,26 +176,26 @@ class PeerConn(asynchat.async_chat):
             except ValueError:
                 pass
         else:
-            self.message('1') #unchoke
+            self.message(1) #unchoke
 
     def interest(self, state):
         self.am_interested = state
         if state:
-            self.message('2') #interested
+            self.message(2) #interested
         else:
-            self.message('3') #uninterested
+            self.message(3) #uninterested
 
     def have(self, piece):
         if not self.bitfield[piece]: #don't send HAVE unless they might want it
-            self.message('4', 'L', piece)
+            self.message(4, 'L', piece)
 
     def request(self, piece, begin, length):
         self.n_requests_in_flight += 1
-        self.message('6', 'LLL', piece, begin, length)
+        self.message(6, 'LLL', piece, begin, length)
 
     def piece(self, index, begin, block):
         self.n_requests_in_flight -= 1
-        self.message('7', 'LL' + str(len(block)) + 's', index, begin, block)
+        self.message(7, 'LL' + str(len(block)) + 's', index, begin, block)
 
     def cancel(self, piece, begin, length):
-        self.message('8', 'LLL', piece, begin, length)
+        self.message(8, 'LLL', piece, begin, length)
