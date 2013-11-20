@@ -109,7 +109,7 @@ class TorrentTracker(object):
         if event:
             params['event'] = event
         response = requests.get(self.tracker_url, params = params)
-        self._process_response(response.text)
+        self._process_response(response.content)
 
     def _process_response(self, response_text):
         try:

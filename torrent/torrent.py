@@ -1,7 +1,13 @@
 import os
 import argparse
+from Queue import Queue
+
 import bencode
+
 import fileinfo
+from files import FilePiece
+
+BLOCK_SIZE = 2 ** 14
 
 class TorrentApplication(object):
     def __init__(self, torrent_file, seed):
@@ -10,7 +16,9 @@ class TorrentApplication(object):
 
     def start(self):
         self.file_info.begin_download()
-        print self.file_info.trackers
+        print [repr(tr.peers) for trs in self.file_info.trackers for tr in trs]
+        downloader = TorrentDownloader(self.file_info)
+        downloader.start()
 
 class TorrentFileRetriever(object):
     def __init__(self, torrent_file):
@@ -32,7 +40,48 @@ class TorrentFileRetriever(object):
         raise NotImplementedError
 
 class TorrentDownloader(object):
-    pass
+    def __init__(self, fileinfo, n_connections = 10):
+        self.fileinfo = fileinfo
+        self.n_connections = n_connections
+        self.pieces = [FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
+        self.peers = []
+        self.queue = Queue()
+
+    def connect_to_peers(self):
+        pass
+
+    def get_rarest_piece_had_by(self, peer):
+        id_to_have_map = {}
+        for idx, has in enumerate(peer.bitfield):
+            id_to_have_map[idx] = 1
+
+        for otherpeer in self.peers:
+            for idx, has in enumerate(otherpeer.bitfield):
+                if idx in id_to_have_map:
+                    id_to_have_map[idx] = id_to_have_map[idx] + 1
+
+        piece_id = min(id_to_have_map, key=lambda x: id_to_have_map[x])
+        return self.pieces[piece_id]
+
+    def start(self):
+        while not all(self.pieces.is_complete):
+            self.connect_to_peers()
+            while not self.queue.empty():
+                piece_id, begin_byte, data = self.queue.get()
+                block_id = begin_byte / BLOCK_SIZE
+                self.pieces[piece_id].add_block(block_id, data)
+
+            peers_to_remove = []
+            for peer in self.peers:
+                if peer.closed:
+                    peers_to_remove.append(peer)
+                    continue
+                piece_to_get = self.get_rarest_piece_had_by(peer)
+                block_idx = piece_to_get.get_next_block_id()
+                peer.request(piece_to_get.piece_index, BLOCK_SIZE * block_idx, BLOCK_SIZE)
+
+            for peer in peers_to_remove:
+                self.peers.remove(peer)
 
 class TorrentUploader(object):
     pass

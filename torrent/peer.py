@@ -9,7 +9,7 @@ class _State:
     (PreHandshake, Handshake, PreMessage, Message) = range(0, 4)
 
 class PeerServer(asyncore.dispatcher):
-    
+
     def __init__(self, port, fileinfo):
         self.fileinfo = fileinfo
         asyncore.dispatcher.__init__(self)
@@ -28,7 +28,9 @@ class PeerServer(asyncore.dispatcher):
 
 class PeerConn(asynchat.async_chat):
 
-    def __init__(self, fileinfo, sock=None, hostport=None):
+    def __init__(self, fileinfo, sock=None, hostport=None, output_queue):
+        self.closed = True
+        self.output_queue = output_queue
         if sock is None: #created as address
             asynchat.async_chat.__init__(self)
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -36,7 +38,7 @@ class PeerConn(asynchat.async_chat):
         else: #created as socket
             asynchat.async_chat.__init__(self, sock=sock)
         #handshake is length-prefixed with one byte
-        self.set_terminator(1) 
+        self.set_terminator(1)
         self.fileinfo = fileinfo
         #record of pieces that have been recieved
         self.bitfield = len(fileinfo.pieces) * bitarray('0', endian='big')
@@ -51,6 +53,7 @@ class PeerConn(asynchat.async_chat):
         self.am_interested = False
         self.peer_choking = True
         self.peer_interested = False
+        self.n_requests_in_flight = 0
         #send handshake per spec
         self.push(struct.pack('>B19sq20s20s', 19, 'BitTorrent protocol',
                               0, fileinfo.peer_id, fileinfo.info_hash))
@@ -59,6 +62,12 @@ class PeerConn(asynchat.async_chat):
     #just use the default mechanism
     def collect_incoming_data(self, data):
         self._collect_incoming_data(data)
+
+    def handle_connect(self):
+        self.closed = False
+
+    def handle_close(self):
+        self.closed = True
 
     #helper that adds the message id and length
     def message(self, msgid, fmt='', *args):
@@ -141,6 +150,7 @@ class PeerConn(asynchat.async_chat):
             block = data[9:]
             index, begin = struct.unpack('>LL', data[1:9])
             print 'got piece', repr( (index, begin, block) )
+            self.output_queue.put((index,begin,block))
             #self.fileinfo.got_piece(index, begin, block)
         if msgid == '8': #cancel
             print 'cancel', repr(struct.unpack('>LLL', data[1:13]))
@@ -172,9 +182,11 @@ class PeerConn(asynchat.async_chat):
             self.message('4', 'L', piece)
 
     def request(self, piece, begin, length):
+        self.n_requests_in_flight += 1
         self.message('6', 'LLL', piece, begin, length)
 
     def piece(self, index, begin, block):
+        self.n_requests_in_flight -= 1
         self.message('7', 'LL' + str(len(block)) + 's', index, begin, block)
 
     def cancel(self, piece, begin, length):
