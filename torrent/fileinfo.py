@@ -32,6 +32,14 @@ class TorrentFileInfo(object):
     def end_download(self):
         self.tracker_communicate(event='stopped')
 
+    def get_all_peers(self):
+        peers = []
+        for trackerlist in self.trackers:
+            for tracker in trackerlist:
+                peers.extend(tracker.peers)
+
+        return peers
+
     def tracker_communicate(self, event = None):
         any_successes = False
         for equiv_list in self.trackers:
