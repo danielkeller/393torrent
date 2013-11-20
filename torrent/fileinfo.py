@@ -111,7 +111,7 @@ class TorrentTracker(object):
             params['event'] = event
         response = requests.get(self.tracker_url, params = params)
         print response
-        self._process_response(response.text)
+        self._process_response(response.content)
 
     def _process_response(self, response_text):
         try:

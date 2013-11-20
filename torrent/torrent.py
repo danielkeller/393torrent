@@ -10,7 +10,7 @@ class TorrentApplication(object):
 
     def start(self):
         self.file_info.begin_download()
-        print self.file_info.trackers
+        print [repr(tr.peers) for trs in self.file_info.trackers for tr in trs]
 
 class TorrentFileRetriever(object):
     def __init__(self, torrent_file):
