@@ -28,8 +28,8 @@ class PeerServer(asyncore.dispatcher):
 
 class PeerConn(asynchat.async_chat):
 
-    def __init__(self, fileinfo, sock=None, hostport=None, output_queue):
-        self.closed = True
+    def __init__(self, fileinfo, output_queue, sock=None, hostport=None):
+        self.closed = False
         self.output_queue = output_queue
         if sock is None: #created as address
             asynchat.async_chat.__init__(self)
@@ -56,18 +56,18 @@ class PeerConn(asynchat.async_chat):
         self.n_requests_in_flight = 0
         #send handshake per spec
         self.push(struct.pack('>B19sq20s20s', 19, 'BitTorrent protocol',
-                              0, fileinfo.peer_id, fileinfo.info_hash))
+                              0, fileinfo.info_hash, fileinfo.peer_id))
         #todo: send bitfield
+
+    def handle_close(self):
+        print 'connection terminated by peer'
+        self.closed = True
+        self.close()
 
     #just use the default mechanism
     def collect_incoming_data(self, data):
+        print repr(data)
         self._collect_incoming_data(data)
-
-    def handle_connect(self):
-        self.closed = False
-
-    def handle_close(self):
-        self.closed = True
 
     #helper that adds the message id and length
     def message(self, msgid, fmt='', *args):
@@ -98,6 +98,7 @@ class PeerConn(asynchat.async_chat):
         pstrlen, = struct.unpack('B', self._get_data())
         if pstrlen != 19: #length must be 19
             self.close_when_done()
+            print 'hanshake failed'
             return
 
     def _get_handshake(self):
@@ -191,14 +192,3 @@ class PeerConn(asynchat.async_chat):
 
     def cancel(self, piece, begin, length):
         self.message('8', 'LLL', piece, begin, length)
-
-def start_test():
-    import fileinfo
-    import threading
-    import asyncore
-    globals()['torrfile'] = fileinfo.TorrentFileInfo(open("testcases/singlefile.torrent").read())
-    globals()['server'] = PeerServer(6880, torrfile)
-    globals()['client'] = PeerConn(torrfile, hostport=('localhost', 6880))
-    globals()['thr'] = threading.Thread(target = asyncore.loop)
-    thr.daemon = True
-    thr.start()

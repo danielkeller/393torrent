@@ -17,7 +17,7 @@ class TorrentFileInfo(object):
         self.pieces = [pieces[i:i+20] for i in range(0, len(pieces), 20)]
         self.piece_length = torrent_dict['info']['piece length']
         self.info_hash = self.find_info_hash(torrent_file_text)
-        self.peer_id = '393Torrent' + os.urandom(9)
+        self.peer_id = '393Torrent' + os.urandom(10)
         self.files = self.get_files_from_info_dict(torrent_dict['info'])
         self.total_size = sum([file.length for file in self.files])
         self.bytes_downloaded = 0
@@ -135,7 +135,7 @@ class TorrentTracker(object):
             # compact representation
             peers = response_dict['peers']
             peerbytes = [peers[i:i+6] for i in range(0, len(peers), 6)]
-            self.peers = [TorrentPeer('.'.join(map(str, [ord(x) for x in peer[:4]])), ord(peer[4]) * 255 + ord(peer[5])) for peer in peerbytes]
+            self.peers = [TorrentPeer('.'.join(map(str, [ord(x) for x in peer[:4]])), ord(peer[4])*256 + ord(peer[5])) for peer in peerbytes]
         self.interval = response_dict['interval']
         if 'tracker id' in response_dict:
             self.tracker_id = response_dict['tracker id']
