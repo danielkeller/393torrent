@@ -19,6 +19,7 @@ class TorrentFileInfo(object):
         self.info_hash = self.find_info_hash(torrent_file_text)
         self.peer_id = '393Torrent' + os.urandom(10)
         self.files = self.get_files_from_info_dict(torrent_dict['info'])
+        self.rootfilename = torrent_dict['info']['name']
         self.total_size = sum([file.length for file in self.files])
         self.bytes_downloaded = 0
         self.bytes_uploaded = 0

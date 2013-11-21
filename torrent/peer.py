@@ -35,6 +35,8 @@ class PeerConn(asynchat.async_chat):
             asynchat.async_chat.__init__(self)
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
             self.connect(hostport) #expects a host-port pair
+            self.host = hostport[0]
+            self.port = hostport[1]
         else: #created as socket
             asynchat.async_chat.__init__(self, sock=sock)
         #handshake is length-prefixed with one byte
@@ -91,7 +93,7 @@ class PeerConn(asynchat.async_chat):
             self.state = _State.PreMessage
             # runs first time after first HAVE
             # then again whenever needed
-            while self.n_requests_in_flight < 10:
+            while self.n_requests_in_flight < 1:
                 to_get = self.torrent_downloader.get_request_to_make(self)
                 if not to_get:
                     break
@@ -106,16 +108,13 @@ class PeerConn(asynchat.async_chat):
         pstrlen, = struct.unpack('B', self._get_data())
         if pstrlen != 19: #length must be 19
             self.close_when_done()
-            print 'hanshake failed'
             return
 
     def _get_handshake(self):
         pstr, reserved, self.info_hash, self.peer_id = struct.unpack('>19sq20s20s', self._get_data())
         if pstr != 'BitTorrent protocol': #protocol string must be this
             self.close_when_done()
-            print 'hanshake failed'
             return
-        print 'hanshake successful'
 
     def _get_msglen(self):
         msglen, = struct.unpack('>L', self._get_data())
@@ -127,7 +126,6 @@ class PeerConn(asynchat.async_chat):
     def _get_message(self):
         data = self._get_data()
         msgid = ord(data[0])
-        print 'message', msgid
         if msgid == 0: #choke
             self.peer_choking = True
             print 'choked'
@@ -148,7 +146,9 @@ class PeerConn(asynchat.async_chat):
             if len(data[1:]) != bits2bytes(len(self.bitfield)): #wrong length
                 self.close_when_done()
                 return
+            self.bitfield = bitarray('')
             self.bitfield.frombytes(data[1:])
+            self.bitfield = self.bitfield[:len(self.fileinfo.pieces)]
             print 'bitfield, has', self.bitfield.count()
         if msgid == 6: #request
             if not self.am_choking:
@@ -158,7 +158,7 @@ class PeerConn(asynchat.async_chat):
         if msgid == 7: #piece
             block = data[9:]
             index, begin = struct.unpack('>LL', data[1:9])
-            print 'got piece', repr( (index, begin, block) )
+            print 'got piece', repr( (index, begin) )
             self.torrent_downloader.got_piece(index,begin,block)
         if msgid == 8: #cancel
             print 'cancel', repr(struct.unpack('>LLL', data[1:13]))
@@ -190,6 +190,7 @@ class PeerConn(asynchat.async_chat):
             self.message(4, 'L', piece)
 
     def request(self, piece, begin, length):
+        print 'sent request for ', piece, 'at', begin
         self.n_requests_in_flight += 1
         self.message(6, 'LLL', piece, begin, length)
 
