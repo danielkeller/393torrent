@@ -36,7 +36,8 @@ class TorrentFileInfo(object):
     def used_peer(self, peer):
         for trackerlist in self.trackers:
             for tracker in trackerlist:
-                tracker.peers.remove(peer)
+                if peer in tracker.peers:
+                    tracker.peers.remove(peer)
 
         if len(self.get_all_peers()) == 0:
             self.tracker_communicate()
