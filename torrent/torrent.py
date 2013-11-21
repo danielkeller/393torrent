@@ -50,7 +50,6 @@ class TorrentDownloader(object):
         self.queue = Queue()
         self.server = peer.PeerServer(6880, self.fileinfo)
         self.filesystem_manager = FilesystemManager(self.fileinfo)
-        self.filesystem_manager.create_empty_file()
 
     def connect_to_peers(self):
         for p in self.fileinfo.get_all_peers():

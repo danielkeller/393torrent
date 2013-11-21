@@ -6,18 +6,12 @@ class FilesystemManager(object):
         self.fileinfo = fileinfo
         self.downloads_dir = os.getcwd()
         self.downloads_dir = os.path.join(self.downloads_dir, fileinfo.rootfilename)
-        if not os.path.exists(self.downloads_dir):
-            os.makedirs(self.downloads_dir)
-
         self.files = fileinfo.files
         # get the list of files and paths with the file length
         for z in self.files:                                 # for each file we need to create a place holder which can be opened later
             length = z.length
             name = z.name
-            path = z.path
-            self.createEmptyFile(length, path, name)
-
-
+            self.create_empty_file(length, name)
 
     def write_piece_to_file(self, piece):
         start_byte = piece.piece_index * self.fileinfo.piece_length
@@ -29,7 +23,6 @@ class FilesystemManager(object):
             # for each file check the length to determine if the piece belongs in that file
             length = f.length
             name = f.name
-            path = f.path
             if current_byte + length < start_byte:
                 current_byte = current_byte + length
             else:
@@ -48,13 +41,12 @@ class FilesystemManager(object):
                     start_byte = current_byte
 
 
-    def create_empty_file(self, length, path, name):
-        filePath = os.path.join(self.downloads_dir, path)
+    def create_empty_file(self, length, name):
+        filePath = os.path.join(self.downloads_dir, name)
                                                     # path of the directory in which the file will exist
-        fullPath = os.path.join(filePath, name)     # Full path including name of the file
         if not os.path.exists(filePath):
-            os.makedirs(filePath)                   # create the directory if it doesn't exist
-        fo = open(name, "wb")                       # open a new file to place pieces into
+            os.makedirs(os.path.dirname(filePath))                   # create the directory if it doesn't exist
+        f = open(filePath, "wb")                       # open a new file to place pieces into
         f.seek(length-1)                            # find last bit in the file
         f.write("\0")                               # add one empty bit at the end
         f.close()                                   # place holder created

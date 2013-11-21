@@ -27,7 +27,12 @@ class FilePiece(object):
         return all(block.data != None for block in self.blocks)
 
     def verify_and_write(self, filewriter):
-        pass
+        sha1 = hashlib.sha1(''.join(block.data for block in self.blocks)).digest()
+        if sha1 == self.piece_hash:
+            filewriter.write_piece_to_file(self)
+
+        #once written, remove from RAM
+        del self.blocks[:]
 
 class FileBlock(object):
     def __init__(self, block_id, data=None):

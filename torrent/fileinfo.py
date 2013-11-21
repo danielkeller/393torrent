@@ -33,6 +33,14 @@ class TorrentFileInfo(object):
     def end_download(self):
         self.tracker_communicate(event='stopped')
 
+    def used_peer(self, peer):
+        for trackerlist in self.trackers:
+            for tracker in trackerlist:
+                tracker.peers.remove(peer)
+
+        if len(self.get_all_peers()) == 0:
+            self.tracker_communicate()
+
     def get_all_peers(self):
         peers = []
         for trackerlist in self.trackers:
@@ -127,8 +135,8 @@ class TorrentTracker(object):
             raise IOError(response_text)
         if 'failure reason' in response_dict:
             raise IOError(response_dict['failure reason'])
-        self.complete = response_dict['complete']
-        self.incomplete = response_dict['incomplete']
+        self.complete = response_dict.get('complete', 0)
+        self.incomplete = response_dict.get('incomplete', 0)
         if isinstance(response_dict['peers'], dict):
             # dict representation
             self.peers = [TorrentPeer(peer['ip'], peer['port']) for peer in response_dict['peers']]

@@ -93,7 +93,7 @@ class PeerConn(asynchat.async_chat):
             self.state = _State.PreMessage
             # runs first time after first HAVE
             # then again whenever needed
-            while self.n_requests_in_flight < 1:
+            while not self.peer_choking and self.n_requests_in_flight < 1:
                 to_get = self.torrent_downloader.get_request_to_make(self)
                 if not to_get:
                     break
