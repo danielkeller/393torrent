@@ -66,7 +66,7 @@ class TorrentDownloader(object):
     def get_rarest_piece_had_by(self, peer):
         id_to_have_map = {}
         for idx, has in enumerate(peer.bitfield):
-            if not self.pieces[piece_id].is_fully_requested:
+            if not self.pieces[idx].is_fully_requested:
                 id_to_have_map[idx] = 1
 
         for otherpeer in self.peers:
