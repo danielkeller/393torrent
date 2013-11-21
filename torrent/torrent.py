@@ -45,7 +45,7 @@ class TorrentDownloader(object):
     def __init__(self, fileinfo, n_connections = 10):
         self.fileinfo = fileinfo
         self.n_connections = n_connections
-        self.pieces = [] #[FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
+        self.pieces =  [FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
         self.peers = []
         self.queue = Queue()
         #self.thr = threading.Thread(target = asyncore.loop)
