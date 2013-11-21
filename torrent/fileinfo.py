@@ -19,6 +19,7 @@ class TorrentFileInfo(object):
         self.info_hash = self.find_info_hash(torrent_file_text)
         self.peer_id = '393Torrent' + os.urandom(10)
         self.files = self.get_files_from_info_dict(torrent_dict['info'])
+        self.rootfilename = torrent_dict['info']['name']
         self.total_size = sum([file.length for file in self.files])
         self.bytes_downloaded = 0
         self.bytes_uploaded = 0
@@ -31,6 +32,15 @@ class TorrentFileInfo(object):
 
     def end_download(self):
         self.tracker_communicate(event='stopped')
+
+    def used_peer(self, peer):
+        for trackerlist in self.trackers:
+            for tracker in trackerlist:
+                if peer in tracker.peers:
+                    tracker.peers.remove(peer)
+
+        if len(self.get_all_peers()) == 0:
+            self.tracker_communicate()
 
     def get_all_peers(self):
         peers = []
@@ -126,8 +136,8 @@ class TorrentTracker(object):
             raise IOError(response_text)
         if 'failure reason' in response_dict:
             raise IOError(response_dict['failure reason'])
-        self.complete = response_dict['complete']
-        self.incomplete = response_dict['incomplete']
+        self.complete = response_dict.get('complete', 0)
+        self.incomplete = response_dict.get('incomplete', 0)
         if isinstance(response_dict['peers'], dict):
             # dict representation
             self.peers = [TorrentPeer(peer['ip'], peer['port']) for peer in response_dict['peers']]

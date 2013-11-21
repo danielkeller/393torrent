@@ -5,6 +5,7 @@ from Queue import Queue
 import bencode
 import fileinfo
 from files import FilePiece
+from writetodisk import FilesystemManager
 import peer
 import threading
 import asyncore
@@ -18,7 +19,6 @@ class TorrentApplication(object):
 
     def start(self):
         self.file_info.begin_download()
-        print [repr(tr.peers) for trs in self.file_info.trackers for tr in trs]
         downloader = TorrentDownloader(self.file_info)
         downloader.start()
 
@@ -45,20 +45,21 @@ class TorrentDownloader(object):
     def __init__(self, fileinfo, n_connections = 10):
         self.fileinfo = fileinfo
         self.n_connections = n_connections
-        self.pieces = [] #[FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
+        self.pieces =  [FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
         self.peers = []
         self.queue = Queue()
-        #self.thr = threading.Thread(target = asyncore.loop)
-        #self.thr.daemon = True
-        #self.thr.start()
         self.server = peer.PeerServer(6880, self.fileinfo)
+        self.filesystem_manager = FilesystemManager(self.fileinfo)
 
     def connect_to_peers(self):
         for p in self.fileinfo.get_all_peers():
             if len(self.peers) == self.n_connections:
                 break
+            if any(other.host == p.ip and other.port == p.port for other in self.peers):
+                continue
             try:
                 print 'connect', p
+                self.fileinfo.used_peer(p)
                 self.peers += [peer.PeerConn(self.fileinfo, self, hostport=(p.ip, p.port))]
             except socket.error as e:
                 print e
@@ -66,7 +67,7 @@ class TorrentDownloader(object):
     def get_rarest_piece_had_by(self, peer):
         id_to_have_map = {}
         for idx, has in enumerate(peer.bitfield):
-            if not self.pieces[idx].is_fully_requested:
+            if not self.pieces[idx].is_fully_requested():
                 id_to_have_map[idx] = 1
 
         for otherpeer in self.peers:
@@ -81,8 +82,11 @@ class TorrentDownloader(object):
 
     def got_piece(self, piece_id, block_begin, data):
         block_id = block_begin / BLOCK_SIZE
-        self.pieces[piece_id].add_block(block_id, data)
-        if all(piece.is_complete):
+        piece = self.pieces[piece_id]
+        piece.add_block(block_id, data)
+        if piece.is_fully_downloaded():
+            piece.verify_and_write()
+        if all(piece.is_fully_downloaded() for piece in self.pieces):
             self.close_all_peers()
 
     def close_all_peers(self):
@@ -96,7 +100,7 @@ class TorrentDownloader(object):
         if not piece_to_get:
             return None
         block_idx = piece_to_get.get_next_block_id()
-        return piece_to_get, block_idx * BLOCK_SIZE, BLOCK_SIZE
+        return piece_to_get.piece_index, block_idx * BLOCK_SIZE, BLOCK_SIZE
 
     def peer_closed(self, peer):
         self.peers.remove(peer)
