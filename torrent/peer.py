@@ -28,9 +28,9 @@ class PeerServer(asyncore.dispatcher):
 
 class PeerConn(asynchat.async_chat):
 
-    def __init__(self, fileinfo, output_queue, sock=None, hostport=None):
+    def __init__(self, fileinfo, torrent_downloader, sock=None, hostport=None):
         self.closed = False
-        self.output_queue = output_queue
+        self.torrent_downloader = torrent_downloader
         if sock is None: #created as address
             asynchat.async_chat.__init__(self)
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -60,9 +60,9 @@ class PeerConn(asynchat.async_chat):
         #todo: send bitfield
 
     def handle_close(self):
-        print 'connection terminated by peer'
-        self.closed = True
+        print 'connection terminated'
         self.close()
+        self.torrent_downloader.peer_closed(self)
 
     #just use the default mechanism
     def collect_incoming_data(self, data):
@@ -89,6 +89,15 @@ class PeerConn(asynchat.async_chat):
             self._get_message()
             self.set_terminator(4)
             self.state = _State.PreMessage
+            # runs first time after first HAVE
+            # then again whenever needed
+            while self.n_requests_in_flight < 10:
+                to_get = self.torrent_downloader.get_request_to_make(self)
+                if not to_get:
+                    break
+                piece_id, block_start, block_size = to_get
+                self.request(piece_id, block_start, block_size)
+
 
     def keepalive(self):
         self.push('\x00\x00\x00\x00')
@@ -150,8 +159,7 @@ class PeerConn(asynchat.async_chat):
             block = data[9:]
             index, begin = struct.unpack('>LL', data[1:9])
             print 'got piece', repr( (index, begin, block) )
-            self.output_queue.put((index,begin,block))
-            #self.fileinfo.got_piece(index, begin, block)
+            self.torrent_downloader.got_piece(index,begin,block)
         if msgid == 8: #cancel
             print 'cancel', repr(struct.unpack('>LLL', data[1:13]))
             #DK how to i get rid of individual items from a queue?
