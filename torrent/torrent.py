@@ -87,7 +87,7 @@ class TorrentDownloader(object):
         if new_unchoke:
             self.ui.peer_unchoked()
         else:
-            self.ui.peer_choke()
+            self.ui.peer_choked()
 
     def got_piece(self, piece_id, block_begin, data):
         block_id = block_begin / BLOCK_SIZE

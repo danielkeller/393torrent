@@ -18,8 +18,6 @@ class PeerServer(asyncore.dispatcher):
         self.bind(('0.0.0.0', port))
         self.listen(5)
 
-    def handle_error(self, t, v, traceback):
-        self.torrent_downloader.ui.update_log(traceback)
 
     def handle_accept(self):
         pair = self.accept()
@@ -63,6 +61,9 @@ class PeerConn(asynchat.async_chat):
         self.push(struct.pack('>B19sq20s20s', 19, 'BitTorrent protocol',
                               0, fileinfo.info_hash, fileinfo.peer_id))
         #todo: send bitfield
+
+    def handle_error(self):
+        self.torrent_downloader.ui.update_log('Network error with peer.')
 
     def handle_close(self):
         self.torrent_downloader.ui.update_log( 'connection terminated')
@@ -131,12 +132,12 @@ class PeerConn(asynchat.async_chat):
         msgid = ord(data[0])
         if msgid == 0: #choke
             if not self.peer_choking:
-                self.torrent_downloader.update_choking_state(True)
+                self.torrent_downloader.update_choking_status(False)
             self.peer_choking = True
             self.torrent_downloader.ui.update_log('choked')
         if msgid == 1: #unchoke
             if self.peer_choking:
-                self.torrent_downloader.update_choking_state(False)
+                self.torrent_downloader.update_choking_status(True)
             self.peer_choking = False
             self.torrent_downloader.ui.update_log( 'unchoked')
         if msgid == 2: #interested
