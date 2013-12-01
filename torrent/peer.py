@@ -18,11 +18,12 @@ class PeerServer(asyncore.dispatcher):
         self.bind(('0.0.0.0', port))
         self.listen(5)
 
+
     def handle_accept(self):
         pair = self.accept()
         if pair is not None:
             sock, addr = pair
-            print 'connect from %s' % repr(addr)
+            self.torrent_downloader.ui.update_log( 'connect from %s' % repr(addr))
             #FIXME: notify the application that someone connected
             self.testconn = PeerConn(self.fileinfo, sock=sock)
 
@@ -61,8 +62,11 @@ class PeerConn(asynchat.async_chat):
                               0, fileinfo.info_hash, fileinfo.peer_id))
         #todo: send bitfield
 
+    def handle_error(self):
+        self.torrent_downloader.ui.update_log('Network error with peer.')
+
     def handle_close(self):
-        print 'connection terminated'
+        self.torrent_downloader.ui.update_log( 'connection terminated')
         self.close()
         self.torrent_downloader.peer_closed(self)
 
@@ -129,23 +133,27 @@ class PeerConn(asynchat.async_chat):
         data = self._get_data()
         msgid = ord(data[0])
         if msgid == 0: #choke
+            if not self.peer_choking:
+                self.torrent_downloader.update_choking_status(False)
             self.peer_choking = True
-            print 'choked'
+            self.torrent_downloader.ui.update_log('choked')
         if msgid == 1: #unchoke
+            if self.peer_choking:
+                self.torrent_downloader.update_choking_status(True)
             self.peer_choking = False
-            print 'unchoked'
+            self.torrent_downloader.ui.update_log( 'unchoked')
         if msgid == 2: #interested
             self.peer_interested = True
             self.torrent_downloader.interest_state(self)
-            print 'interested'
+            self.torrent_downloader.ui.update_log( 'interested')
         if msgid == 3: #uninstrested
             self.peer_interested = False
             self.torrent_downloader.interest_state(self)
-            print 'uninterested'
+            self.torrent_downloader.ui.update_log( 'uninterested')
         if msgid == 4: #have
             index, = struct.unpack('>L', data[1:])
             self.bitfield[index] = True
-            print 'have', index, 'for', self.bitfield.count()
+            self.torrent_downloader.ui.update_log('have ' + str(index) + 'for ' + str(self.bitfield.count()))
         if msgid == 5: #bitfield
             if len(data[1:]) != bits2bytes(len(self.bitfield)): #wrong length
                 self.close_when_done()
@@ -153,20 +161,20 @@ class PeerConn(asynchat.async_chat):
             self.bitfield = bitarray('')
             self.bitfield.frombytes(data[1:])
             self.bitfield = self.bitfield[:len(self.fileinfo.pieces)]
-            print 'bitfield, has', self.bitfield.count()
+            self.torrent_downloader.ui.update_log( 'bitfield, has ' + str(self.bitfield.count()))
         if msgid == 6: #request
             if not self.am_choking:
                 self.requests.put(struct.unpack('>LLL', data[1:13]))
-                print 'request', repr(self.requests.get())
+                self.torrent_downloader.ui.update_log( 'request for piece' +  repr(self.requests.get()))
                 self.torrent_downloader.got_request(self)
         if msgid == 7: #piece
             block = data[9:]
             index, begin = struct.unpack('>LL', data[1:9])
             self.n_requests_in_flight -= 1
-            print 'got piece', repr( (index, begin) )
+            self.torrent_downloader.ui.update_log( 'got block for piece ' +  repr(index) + ' at ' + str(begin))
             self.torrent_downloader.got_piece(index,begin,block)
         if msgid == 8: #cancel
-            print 'cancel', repr(struct.unpack('>LLL', data[1:13]))
+            self.torrent_downloader.ui.update_log( 'cancel ' + repr(struct.unpack('>LLL', data[1:13])))
             #DK how to i get rid of individual items from a queue?
         if msgid == 9: #dht port
             pass
@@ -201,7 +209,7 @@ class PeerConn(asynchat.async_chat):
             self.message(4, 'L', piece)
 
     def request(self, piece, begin, length):
-        print 'sent request for ', piece, 'at', begin
+        self.torrent_downloader.ui.update_log( 'sent request for ' + str(piece) + ' at ' + str(begin))
         self.n_requests_in_flight += 1
         self.message(6, 'LLL', piece, begin, length)
 
