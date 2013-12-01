@@ -1,3 +1,4 @@
+import hashlib
 BLOCK_SIZE = 2 ** 14
 
 class FilePiece(object):
@@ -27,9 +28,13 @@ class FilePiece(object):
         return all(block.data != None for block in self.blocks)
 
     def verify_and_write(self, filewriter):
-        sha1 = hashlib.sha1(''.join(block.data for block in self.blocks)).digest()
+        self.data = ''.join(block.data for block in self.blocks)
+        sha1 = hashlib.sha1(self.data).digest()
         if sha1 == self.piece_hash:
             filewriter.write_piece_to_file(self)
+        else:
+            print 'BROKEN PIECE:', self.piece_index
+            #DK what now?
 
         #once written, remove from RAM
         del self.blocks[:]

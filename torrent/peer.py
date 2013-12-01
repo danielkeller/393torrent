@@ -97,7 +97,9 @@ class PeerConn(asynchat.async_chat):
             self.state = _State.PreMessage
             # runs first time after first HAVE
             # then again whenever needed
-            while not self.peer_choking and self.n_requests_in_flight < 1:
+            if self.peer_choking and self.torrent_downloader.get_request_to_make(self):
+                self.interest(True)
+            while not self.peer_choking and self.n_requests_in_flight < 10:
                 to_get = self.torrent_downloader.get_request_to_make(self)
                 if not to_get:
                     break
@@ -142,9 +144,11 @@ class PeerConn(asynchat.async_chat):
             self.torrent_downloader.ui.update_log( 'unchoked')
         if msgid == 2: #interested
             self.peer_interested = True
+            self.torrent_downloader.interest_state(self)
             self.torrent_downloader.ui.update_log( 'interested')
         if msgid == 3: #uninstrested
             self.peer_interested = False
+            self.torrent_downloader.interest_state(self)
             self.torrent_downloader.ui.update_log( 'uninterested')
         if msgid == 4: #have
             index, = struct.unpack('>L', data[1:])
@@ -162,10 +166,11 @@ class PeerConn(asynchat.async_chat):
             if not self.am_choking:
                 self.requests.put(struct.unpack('>LLL', data[1:13]))
                 self.torrent_downloader.ui.update_log( 'request for piece' +  repr(self.requests.get()))
-                self.requests.task_done()
+                self.torrent_downloader.got_request(self)
         if msgid == 7: #piece
             block = data[9:]
             index, begin = struct.unpack('>LL', data[1:9])
+            self.n_requests_in_flight -= 1
             self.torrent_downloader.ui.update_log( 'got block for piece ' +  repr(index) + ' at ' + str(begin))
             self.torrent_downloader.got_piece(index,begin,block)
         if msgid == 8: #cancel
@@ -175,9 +180,11 @@ class PeerConn(asynchat.async_chat):
             pass
 
     def choke(self, state):
+        if self.am_choking == state:
+            return #reduce chatter
         self.am_choking = state
         if state:
-            self.message('0') #choke
+            self.message(0) #choke
             try:
                 while True: #dump all pending requests on choke per spec
                     self.requests.task_done()
@@ -187,7 +194,10 @@ class PeerConn(asynchat.async_chat):
             self.message(1) #unchoke
 
     def interest(self, state):
+        if self.am_interested == state:
+            return #reduce chatter
         self.am_interested = state
+        print ('is' if state else 'not'), 'interested in', self
         if state:
             self.message(2) #interested
         else:
@@ -195,6 +205,7 @@ class PeerConn(asynchat.async_chat):
 
     def have(self, piece):
         if not self.bitfield[piece]: #don't send HAVE unless they might want it
+            print 'have for', piece, 'to', self
             self.message(4, 'L', piece)
 
     def request(self, piece, begin, length):
@@ -203,7 +214,6 @@ class PeerConn(asynchat.async_chat):
         self.message(6, 'LLL', piece, begin, length)
 
     def piece(self, index, begin, block):
-        self.n_requests_in_flight -= 1
         self.message(7, 'LL' + str(len(block)) + 's', index, begin, block)
 
     def cancel(self, piece, begin, length):

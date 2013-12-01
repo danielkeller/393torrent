@@ -27,7 +27,7 @@ class FilesystemManager(object):
                 current_byte = current_byte + length
             else:
                 # we know the piece contains information for this file
-                file_to_write = open(name, 'wb')
+                file_to_write = open(os.path.join(self.downloads_dir, f.name), 'wb')
                 offset_this_file = start_byte - current_byte
                 file_to_write.seek(offset_this_file)
                 # seek to the index relative to the file
@@ -39,6 +39,7 @@ class FilesystemManager(object):
                 else:
                     current_byte += length
                     start_byte = current_byte
+                file_to_write.close()
 
 
     def create_empty_file(self, length, name):
