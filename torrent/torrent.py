@@ -112,7 +112,7 @@ class TorrentDownloader(object):
         return piece_to_get.piece_index, block_idx * BLOCK_SIZE, BLOCK_SIZE
 
     def peer_closed(self, peer):
-        self.ui.lost_peer(peer.peer_choking)
+        self.ui.lost_peer(not peer.peer_choking)
         self.peers.remove(peer)
         self.connect_to_peers()
 
