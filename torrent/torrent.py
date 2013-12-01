@@ -10,6 +10,7 @@ import peer
 import threading
 import asyncore
 import socket
+from ui import UserInterface
 BLOCK_SIZE = 2 ** 14
 
 class TorrentApplication(object):
@@ -48,6 +49,7 @@ class TorrentDownloader(object):
         self.pieces =  [FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
         self.peers = []
         self.queue = Queue()
+        self.ui = UserInterface(self.fileinfo.total_size)
         self.server = peer.PeerServer(6880, self.fileinfo)
         self.filesystem_manager = FilesystemManager(self.fileinfo)
 
@@ -58,11 +60,12 @@ class TorrentDownloader(object):
             if any(other.host == p.ip and other.port == p.port for other in self.peers):
                 continue
             try:
-                print 'connect', p
+                self.ui.update_log('connect ' + str(p))
                 self.fileinfo.used_peer(p)
+                self.ui.peer_connected()
                 self.peers += [peer.PeerConn(self.fileinfo, self, hostport=(p.ip, p.port))]
             except socket.error as e:
-                print e
+                self.ui.update_log(str(e))
 
     def get_rarest_piece_had_by(self, peer):
         id_to_have_map = {}
@@ -79,6 +82,12 @@ class TorrentDownloader(object):
             return None
         piece_id = min(id_to_have_map, key=lambda x: id_to_have_map[x])
         return self.pieces[piece_id]
+
+    def update_choking_status(self, new_unchoke):
+        if new_unchoke:
+            self.ui.peer_unchoked()
+        else:
+            self.ui.peer_choke()
 
     def got_piece(self, piece_id, block_begin, data):
         block_id = block_begin / BLOCK_SIZE
@@ -103,6 +112,7 @@ class TorrentDownloader(object):
         return piece_to_get.piece_index, block_idx * BLOCK_SIZE, BLOCK_SIZE
 
     def peer_closed(self, peer):
+        self.ui.lost_peer(peer.peer_choking)
         self.peers.remove(peer)
         self.connect_to_peers()
 
