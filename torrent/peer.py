@@ -154,7 +154,7 @@ class PeerConn(asynchat.async_chat):
             if not self.am_choking:
                 self.requests.put(struct.unpack('>LLL', data[1:13]))
                 print 'request', repr(self.requests.get())
-                self.requests.task_done()
+                self.torrent_downloader.got_request(self)
         if msgid == 7: #piece
             block = data[9:]
             index, begin = struct.unpack('>LL', data[1:9])

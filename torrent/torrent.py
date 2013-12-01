@@ -89,6 +89,9 @@ class TorrentDownloader(object):
         if all(piece.is_fully_downloaded() for piece in self.pieces):
             self.close_all_peers()
 
+    def got_request(self, peer):
+        print len(peer.requests)
+
     def close_all_peers(self):
         for peer in self.peers:
             peer.close()
@@ -109,9 +112,6 @@ class TorrentDownloader(object):
     def start(self):
         self.connect_to_peers()
         asyncore.loop()
-
-class TorrentUploader(object):
-    pass
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process a torrent file.')
