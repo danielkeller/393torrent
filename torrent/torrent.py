@@ -10,6 +10,7 @@ import peer
 import threading
 import asyncore
 import socket
+import random
 BLOCK_SIZE = 2 ** 14
 
 class TorrentApplication(object):
@@ -85,12 +86,27 @@ class TorrentDownloader(object):
         piece = self.pieces[piece_id]
         piece.add_block(block_id, data)
         if piece.is_fully_downloaded():
-            piece.verify_and_write()
+            [p.have(piece.piece_index) for p in self.peers]
+            piece.verify_and_write(self.filesystem_manager)
         if all(piece.is_fully_downloaded() for piece in self.pieces):
             self.close_all_peers()
 
     def got_request(self, peer):
         print len(peer.requests)
+
+    #this algorithm is extremely simple. but it should work reasonably well.
+    def interest_state(self, peer):
+        if peer.peer_interested:
+            if sum([not p.am_choking for p in self.peers]) < 4:
+                peer.choke(False) #unchoke this peer if it's okay
+            elif random.randint(0, 9) == 0:
+                #sometimes, randomly choke someone else and unchoke anyway
+                random.choice([p for p in self.peers if not p.am_choking]).choke(True)
+                peer.choke(False)
+        else:
+            peer.choke(True)
+            #optomistically unchoke
+            random.choice([p for p in self.peers if p.am_choking]).choke(False)
 
     def close_all_peers(self):
         for peer in self.peers:
