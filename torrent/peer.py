@@ -61,11 +61,14 @@ class PeerConn(asynchat.async_chat):
         self.push(struct.pack('>B19sq20s20s', 19, 'BitTorrent protocol',
                               0, fileinfo.info_hash, fileinfo.peer_id))
         #todo: send bitfield
-        #if self.torrent_downloader.filesystem_manager.has_a_piece():
-        #    self.bitfield = self.torrent_downloader.filesystem_manager.get_bitfield()
+        #for piece in self.fileinfo.pieces:
+            #if piece.is_fully_downloaded():
+                #self.have(piece.piece_index)
 
-    def handle_error(self):
-        self.torrent_downloader.ui.update_log('Network error with peer.')
+    #def handle_error(self):
+        #nil, t, v, tbinfo = compact_traceback()
+        #print tbinfo
+        #self.torrent_downloader.ui.update_log(tbinfo)
 
     def handle_close(self):
         self.torrent_downloader.ui.update_log( 'connection terminated')
@@ -154,7 +157,7 @@ class PeerConn(asynchat.async_chat):
         if msgid == 4: #have
             index, = struct.unpack('>L', data[1:])
             self.bitfield[index] = True
-            self.torrent_downloader.ui.update_log('have ' + str(index) + 'for ' + str(self.bitfield.count()))
+            self.torrent_downloader.ui.update_log('have ' + str(index) + ' for ' + str(self.bitfield.count()))
         if msgid == 5: #bitfield
             if len(data[1:]) != bits2bytes(len(self.bitfield)): #wrong length
                 self.close_when_done()
@@ -165,14 +168,14 @@ class PeerConn(asynchat.async_chat):
             self.torrent_downloader.ui.update_log( 'bitfield, has ' + str(self.bitfield.count()))
         if msgid == 6: #request
             if not self.am_choking:
-                self.requests.put(struct.unpack('>LLL', data[1:13]))
-                self.torrent_downloader.ui.update_log( 'request for piece' +  repr(self.requests.get()))
-                self.torrent_downloader.got_request(self)
+                req = struct.unpack('>LLL', data[1:13])
+                self.torrent_downloader.ui.update_log( 'request for piece' + repr(req))
+                self.torrent_downloader.got_request(self, req)
         if msgid == 7: #piece
             block = data[9:]
             index, begin = struct.unpack('>LL', data[1:9])
             self.n_requests_in_flight -= 1
-            self.torrent_downloader.ui.update_log( 'got block for piece ' +  repr(index) + ' at ' + str(begin))
+            #self.torrent_downloader.ui.update_log( 'got block for piece ' +  repr(index) + ' at ' + str(begin))
             self.torrent_downloader.got_piece(index,begin,block)
         if msgid == 8: #cancel
             self.torrent_downloader.ui.update_log( 'cancel ' + repr(struct.unpack('>LLL', data[1:13])))
@@ -206,14 +209,14 @@ class PeerConn(asynchat.async_chat):
 
     def have(self, piece):
         if not self.bitfield[piece]: #don't send HAVE unless they might want it
-            print 'have for', piece, 'to', self
+            self.torrent_downloader.ui.update_log( 'have for ' + str(piece) + ' to ' + repr(self))
             self.message(4, 'L', piece)
 
-    def bitfield(self):
+    def bitfield(self, bitfield):
         self.message(5, 'L', self.bitfield) 
 
     def request(self, piece, begin, length):
-        self.torrent_downloader.ui.update_log( 'sent request for ' + str(piece) + ' at ' + str(begin))
+        #self.torrent_downloader.ui.update_log( 'sent request for ' + str(piece) + ' at ' + str(begin))
         self.n_requests_in_flight += 1
         self.message(6, 'LLL', piece, begin, length)
 

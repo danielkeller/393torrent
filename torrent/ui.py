@@ -8,7 +8,7 @@ class UserInterface(object):
         atexit.register(curses.endwin)
         self.total_pieces = total_pieces
         self.bottom = self.window.getmaxyx()[0]
-        self.top_of_log = self.bottom - 4
+        self.top_of_log = self.bottom - 16
         self.n_pieces = 0
         self.start_time = time.clock()
         self.piece_count_y = 2
@@ -17,6 +17,7 @@ class UserInterface(object):
         self.speed_y = 8
         self.peers = 0
         self.unchoked = 0
+        self.downloaded = 0
         self.window.move(self.piece_count_y, 1)
         self.window.addstr("Pieces: 0 / " + str(self.total_pieces))
         self.window.move(self.peer_count_y, 1)
@@ -69,14 +70,19 @@ class UserInterface(object):
         self.window.box(0,0)
         self.window.refresh()
 
-    def got_piece(self, size):
+    def got_block(self, size):
         total_time = time.clock() - self.start_time
         self.downloaded += size
-        self.window.move(self.piece_count_y, len("Pieces: ") + 1)
-        self.window.clrtoeol()
-        self.window.addstr(str(self.n_pieces) + " / " + str(self.total_pieces))
         self.window.move(self.speed_y, len("Download Speed: ") + 1)
         self.window.clrtoeol()
-        self.window.addstr("{.2f}".format(float(self.downloaded) / total_time) + " Kbps")
+        self.window.addstr("{0:.2f}".format(float(self.downloaded) / total_time / 1024) + " Kbps")
+        self.window.box(0,0)
+        self.window.refresh()
+
+    def got_piece(self):
+        self.window.move(self.piece_count_y, len("Pieces: ") + 1)
+        self.window.clrtoeol()
+        self.n_pieces += 1
+        self.window.addstr(str(self.n_pieces) + " / " + str(self.total_pieces))
         self.window.box(0,0)
         self.window.refresh()

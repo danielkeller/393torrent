@@ -44,7 +44,7 @@ class TorrentFileRetriever(object):
         raise NotImplementedError
 
 class TorrentDownloader(object):
-    def __init__(self, fileinfo, n_connections = 10):
+    def __init__(self, fileinfo, n_connections = 30):
         self.fileinfo = fileinfo
         self.n_connections = n_connections
         self.pieces =  [FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
@@ -91,17 +91,22 @@ class TorrentDownloader(object):
             self.ui.peer_choked()
 
     def got_piece(self, piece_id, block_begin, data):
+        self.ui.got_block(len(data))
         block_id = block_begin / BLOCK_SIZE
         piece = self.pieces[piece_id]
         piece.add_block(block_id, data)
         if piece.is_fully_downloaded():
             [p.have(piece.piece_index) for p in self.peers]
             piece.verify_and_write(self.filesystem_manager)
+            self.ui.got_piece()
         if all(piece.is_fully_downloaded() for piece in self.pieces):
             self.close_all_peers()
 
-    def got_request(self, peer):
-        print len(peer.requests)
+    def got_request(self, peer, req):
+        piece_index, block_offset, block_len = req
+        self.fileinfo.get_piece(FilePiece(piece_index, 0, self.fileinfo))
+        block = piece.data[block_offset : block_offset + block_len]
+        peer.piece(piece_index, block_offset, block)
 
     #this algorithm is extremely simple. but it should work reasonably well.
     def interest_state(self, peer):
