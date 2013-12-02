@@ -4,6 +4,7 @@ import struct
 from bitarray import bitarray, bits2bytes
 from time import time, sleep
 from Queue import Queue
+import traceback
 
 class _State:
     (PreHandshake, Handshake, PreMessage, Message) = range(0, 4)
@@ -65,10 +66,10 @@ class PeerConn(asynchat.async_chat):
             #if piece.is_fully_downloaded():
                 #self.have(piece.piece_index)
 
-    #def handle_error(self):
-        #nil, t, v, tbinfo = compact_traceback()
-        #print tbinfo
+    def handle_error(self):
         #self.torrent_downloader.ui.update_log(tbinfo)
+        #traceback.print_exc()
+        self.torrent_downloader.ui.update_log("Peer disconnected due to error")
 
     def handle_close(self):
         self.torrent_downloader.ui.update_log( 'connection terminated')
@@ -141,6 +142,7 @@ class PeerConn(asynchat.async_chat):
                 self.torrent_downloader.update_choking_status(False)
             self.peer_choking = True
             self.torrent_downloader.ui.update_log('choked')
+            self.n_requests_in_flight = 0
         if msgid == 1: #unchoke
             if self.peer_choking:
                 self.torrent_downloader.update_choking_status(True)
@@ -201,7 +203,7 @@ class PeerConn(asynchat.async_chat):
         if self.am_interested == state:
             return #reduce chatter
         self.am_interested = state
-        print ('is' if state else 'not'), 'interested in', self
+        self.torrent_downloader.ui.update_log(('is' if state else 'not') + ' interested')
         if state:
             self.message(2) #interested
         else:
