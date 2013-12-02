@@ -44,7 +44,7 @@ class PeerConn(asynchat.async_chat):
         self.set_terminator(1)
         self.fileinfo = fileinfo
         #record of pieces that have been recieved
-        self.bitfield = len(fileinfo.pieces) * bitarray('0', endian='big')
+        #self.bitfield = len(fileinfo.pieces) * bitarray('0', endian='big')
         #queue of recieved requests
         self.requests = Queue()
         #time last seen (for keep-alive)
@@ -61,6 +61,8 @@ class PeerConn(asynchat.async_chat):
         self.push(struct.pack('>B19sq20s20s', 19, 'BitTorrent protocol',
                               0, fileinfo.info_hash, fileinfo.peer_id))
         #todo: send bitfield
+        if self.torrent_downloader.filesystem_manager.has_a_piece():
+            self.bitfield = self.torrent_downloader.filesystem_manager.get_bitfield()
 
     def handle_error(self):
         self.torrent_downloader.ui.update_log('Network error with peer.')
@@ -105,7 +107,6 @@ class PeerConn(asynchat.async_chat):
                     break
                 piece_id, block_start, block_size = to_get
                 self.request(piece_id, block_start, block_size)
-
 
     def keepalive(self):
         self.push('\x00\x00\x00\x00')
@@ -207,6 +208,9 @@ class PeerConn(asynchat.async_chat):
         if not self.bitfield[piece]: #don't send HAVE unless they might want it
             print 'have for', piece, 'to', self
             self.message(4, 'L', piece)
+
+    def bitfield(self):
+        self.message(5, 'L', self.bitfield) 
 
     def request(self, piece, begin, length):
         self.torrent_downloader.ui.update_log( 'sent request for ' + str(piece) + ' at ' + str(begin))

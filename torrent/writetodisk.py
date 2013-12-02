@@ -7,7 +7,7 @@ class FilesystemManager(object):
         self.downloads_dir = os.getcwd()
         self.downloads_dir = os.path.join(self.downloads_dir, fileinfo.rootfilename)
         self.files = fileinfo.files
-        self.pieces_list = [False] * len(fileinfo.pieces)
+        self.bitfield = None
         # get the list of files and paths with the file length
         for z in self.files:                                 # for each file we need to create a place holder which can be opened later
             length = z.length
@@ -41,7 +41,13 @@ class FilesystemManager(object):
                     current_byte += length
                     start_byte = current_byte
                 # add piece to completed pieces
-                self.pieces_list[piece.piece_index] = True
+                if (len(self.bitfield) - 1) < piece.piece_index:
+                    zero_offset = piece.piece_index - len(self.bitfield) - 1
+                    # add appropriate amount of zeros and a one if piece index is outside of bitfield range
+                    self.bitfield = self.bitfield + ([0] * (zero_offset - 1)) + [1]
+                else:
+                    # we can just update the bitfield to say we have the piece index
+                    self.bitfield[piece.piece_index] = 1
                 file_to_write.close()
 
     def create_empty_file(self, length, name):
@@ -53,8 +59,19 @@ class FilesystemManager(object):
         f.write("\0")                                     # add one empty bit at the end
         f.close()                                         # place holder created
     
+    def has_a_piece(self):
+        if self.bitfield == None:
+            return False
+        else:
+            return True
+
     def has_piece(self, piece_index):
-        return self.pieces_list[piece_index]
+        if (len(self.bitfield) - 1) < piece_index:
+            return False
+        if self.bitfield[piece_index] == 1:
+            return True
+        else:
+            return False
 
     def get_piece(self, piece):
         if has_piece(self, piece.piece_index):
@@ -84,5 +101,5 @@ class FilesystemManager(object):
                         start_byte = current_byte
                     file_to_write.close()
     
-    def get_pieces_list(self):
-        return self.pieces_list
+    def get_bitfield(self):
+        return self.bitfield
