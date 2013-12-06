@@ -1,7 +1,7 @@
 # 393torrent
 A software engineering class project to make a bittorrent client in python.
 
-To install dependencies, run 'pip install -r requirements.txt'
+To install dependencies, run 'sudo pip install -r requirements.txt'
 
 ## How to Use the Application
 
