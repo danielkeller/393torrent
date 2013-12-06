@@ -17,7 +17,6 @@ class FilePiece(object):
             if block == None:
                 self.blocks[idx] = FileBlock(idx)
                 return idx
-        raise Exception("Next Block Called On Fully Requested Piece")
 
     def is_fully_requested(self):
         return all(block != None for block in self.blocks)

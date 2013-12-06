@@ -9,6 +9,8 @@ PYTHONPATH=. coverage run --source torrent test/fileinfo_test.py
 mv .coverage .coverage.fileinfo
 PYTHONPATH=. coverage run --source torrent test/ui_test.py
 mv .coverage .coverage.ui
+PYTHONPATH=. coverage run --source torrent test/files_test.py
+mv .coverage .coverage.ui
 
 coverage combine
 
