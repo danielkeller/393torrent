@@ -44,7 +44,7 @@ class TorrentFileRetriever(object):
         raise NotImplementedError
 
 class TorrentDownloader(object):
-    def __init__(self, fileinfo, n_connections = 10):
+    def __init__(self, fileinfo, n_connections = 30):
         self.fileinfo = fileinfo
         self.n_connections = n_connections
         self.pieces =  [FilePiece(idx, sha1, fileinfo) for idx, sha1 in enumerate(fileinfo.pieces)]
@@ -53,6 +53,8 @@ class TorrentDownloader(object):
         self.ui = UserInterface(self.fileinfo.total_size)
         self.server = peer.PeerServer(6880, self.fileinfo)
         self.filesystem_manager = FilesystemManager(self.fileinfo)
+        #start with wrong estimate
+        self.piece_freq = [1] * len(self.pieces)
 
     def connect_to_peers(self):
         for p in self.fileinfo.get_all_peers():
@@ -68,21 +70,22 @@ class TorrentDownloader(object):
             except socket.error as e:
                 self.ui.update_log(str(e))
 
-    def get_rarest_piece_had_by(self, peer):
-        id_to_have_map = {}
-        for idx, has in enumerate(peer.bitfield):
-            if not self.pieces[idx].is_fully_requested():
-                id_to_have_map[idx] = 1
+    def update_piece_freq(self):
+        self.piece_freq = [0] * len(self.pieces)
 
         for otherpeer in self.peers:
             for idx, has in enumerate(otherpeer.bitfield):
-                if idx in id_to_have_map:
-                    id_to_have_map[idx] = id_to_have_map[idx] + 1
+                self.piece_freq[idx] += has
 
-        if not id_to_have_map:
+    def get_rarest_piece_had_by(self, peer):
+        if random.randint(0, 50) == 0:
+            self.update_piece_freq() #only do this occasionally to save time
+        piece_id, freq = min(enumerate(self.piece_freq),
+            key=lambda (i, f): f if peer.bitfield[i] and not self.pieces[i].is_fully_requested() else 99999)
+        if self.pieces[piece_id].is_fully_requested():
             return None
-        piece_id = min(id_to_have_map, key=lambda x: id_to_have_map[x])
-        return self.pieces[piece_id]
+        else:
+            return self.pieces[piece_id]
 
     def update_choking_status(self, new_unchoke):
         if new_unchoke:
@@ -91,17 +94,22 @@ class TorrentDownloader(object):
             self.ui.peer_choked()
 
     def got_piece(self, piece_id, block_begin, data):
+        self.ui.got_block(len(data))
         block_id = block_begin / BLOCK_SIZE
         piece = self.pieces[piece_id]
         piece.add_block(block_id, data)
         if piece.is_fully_downloaded():
             [p.have(piece.piece_index) for p in self.peers]
             piece.verify_and_write(self.filesystem_manager)
+            self.ui.got_piece()
         if all(piece.is_fully_downloaded() for piece in self.pieces):
             self.close_all_peers()
 
-    def got_request(self, peer):
-        print len(peer.requests)
+    def got_request(self, peer, req):
+        piece_index, block_offset, block_len = req
+        self.fileinfo.get_piece(FilePiece(piece_index, 0, self.fileinfo))
+        block = piece.data[block_offset : block_offset + block_len]
+        peer.piece(piece_index, block_offset, block)
 
     #this algorithm is extremely simple. but it should work reasonably well.
     def interest_state(self, peer):
