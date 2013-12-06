@@ -26,7 +26,7 @@ class PeerServer(asyncore.dispatcher):
             sock, addr = pair
             self.torrent_downloader.ui.update_log( 'connect from %s' % repr(addr))
             #FIXME: notify the application that someone connected
-            self.testconn = PeerConn(self.fileinfo, sock=sock)
+            self.testconn = PeerConn(self.fileinfo, self.torrent_downloader, sock=sock)
 
 class PeerConn(asynchat.async_chat):
 
