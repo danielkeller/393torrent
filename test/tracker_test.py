@@ -8,7 +8,7 @@ class TrackerTest(unittest.TestCase):
         with mock.patch.object(fileinfo.requests, 'get', mock.Mock()) as m:
             with mock.patch.object(tracker, '_process_response', mock.Mock()) as m2:
                 tracker._communicate()
-                m2.assert_called_with(m().text)
+                m2.assert_called_with(m().content)
 
     def test_params(self):
         tracker = fileinfo.TorrentTracker(mock.MagicMock(), mock.MagicMock())

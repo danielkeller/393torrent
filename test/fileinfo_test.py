@@ -20,7 +20,7 @@ class TorrentInfoTest(unittest.TestCase):
             self.assertTrue(hasattr(f_info, 'total_size'))
             self.assertTrue(hasattr(f_info, 'bytes_downloaded'))
             self.assertTrue(hasattr(f_info, 'bytes_uploaded'))
-            self.assertTrue(hasattr(f_info, 'tracker'))
+            self.assertTrue(hasattr(f_info, 'trackers'))
 
     def test_file_from_dict(self):
         with mock.patch.object(fileinfo.bencode, 'bdecode', mock.MagicMock()) as decode_mock:
