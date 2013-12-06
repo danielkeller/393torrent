@@ -28,10 +28,14 @@ class TorrentDownloaderTest(unittest.TestCase):
         self.downloader.fileinfo.begin_download()
         with mock.patch.object(torrent.peer, 'PeerConn', mock.Mock()) as m:
             self.downloader.connect_to_peers()
-            self.assertEqual(10, m.call_count)
+            self.assertEqual(30, m.call_count)
 
-    def test_interest_state(self):
-        pass
+    def test_got_piece(self):
+        with mock.patch.object(self.downloader, 'pieces', [mock.Mock()]):
+            with mock.patch.object(self.downloader, 'close_all_peers', mock.Mock()):
+                self.downloader.got_piece(0, 0, 'abcd')
+                self.downloader.pieces[0].verify_and_write.assert_called_with(self.downloader.filesystem_manager)
+                self.downloader.close_all_peers.assert_called()
 
     def test_close_peers(self):
         with mock.patch.object(self.downloader, 'peers', [mock.Mock()] * 5) as mocks:
@@ -44,6 +48,15 @@ class TorrentDownloaderTest(unittest.TestCase):
         with mock.patch.object(self.downloader, 'get_rarest_piece_had_by'):
             p, b, size = self.downloader.get_request_to_make(mock.Mock())
 
+    def test_update_choking(self):
+        self.downloader.update_choking_status(True)
+        self.downloader.update_choking_status(False)
+
+    def test_got_request(self):
+        self.downloader.got_request(mock.Mock(), tuple([mock.MagicMock()]*3))
+
+    def test_interest_state(self):
+        self.downloader.interest_state(mock.MagicMock())
 
     def test_peer_closed(self):
         m1 = mock.Mock()

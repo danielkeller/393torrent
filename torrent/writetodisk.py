@@ -77,3 +77,4 @@ class FilesystemManager(object):
                     current_byte += length
                     start_byte = current_byte
                 file_to_write.close()
+        return piece

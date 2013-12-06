@@ -107,9 +107,12 @@ class TorrentDownloader(object):
 
     def got_request(self, peer, req):
         piece_index, block_offset, block_len = req
-        self.fileinfo.get_piece(FilePiece(piece_index, 0, self.fileinfo))
-        block = piece.data[block_offset : block_offset + block_len]
-        peer.piece(piece_index, block_offset, block)
+        piece = self.filesystem_manager.get_piece(FilePiece(piece_index, 0, self.fileinfo))
+        if hasattr(piece, 'data'):
+            block = piece.data[block_offset : block_offset + block_len]
+            peer.piece(piece_index, block_offset, block)
+        else:
+            peer.close()
 
     #this algorithm is extremely simple. but it should work reasonably well.
     def interest_state(self, peer):
