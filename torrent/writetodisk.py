@@ -44,7 +44,7 @@ class FilesystemManager(object):
 
     def create_empty_file(self, length, name):
         filePath = os.path.join(self.downloads_dir, name) # path of the directory in which the file will exist
-        if not os.path.exists(filePath):
+        if not os.path.exists(os.path.dirname(filePath)):
             os.makedirs(os.path.dirname(filePath))        # create the directory if it doesn't exist
         f = open(filePath, "wb")                          # open a new file to place pieces into
         f.seek(length-1)                                  # find last bit in the file
@@ -52,6 +52,7 @@ class FilesystemManager(object):
         f.close()                                         # place holder created
 
     def get_piece(self, piece):
+        piece.data=""
         start_byte = piece.piece_index * self.fileinfo.piece_length
         # calculate the index of the piece
         current_byte = 0
@@ -70,10 +71,10 @@ class FilesystemManager(object):
                 # seek to the index relative to the file
                 n_bytes_this_file = length - offset_this_file
                 if n_bytes_this_file >= piece.piece_length:
-                    file_piece.data = file_piece.data.join(file_to_read.read(piece.piece_length))
+                    piece.data = piece.data + file_to_read.read(piece.piece_length)
                     break
                 else:
-                    file_piece.data = file_piece.data.join(file_to_read.read(n_bytes_this_file))
+                    piece.data = piece.data + file_to_read.read(n_bytes_this_file)
                     current_byte += length
                     start_byte = current_byte
                 file_to_write.close()

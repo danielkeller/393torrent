@@ -1,55 +1,75 @@
-import writetodisk
-import path
-from gi.repository import GLib
+from torrent import writetodisk
+import os.path
+import collections
+import unittest
+
+class WriteToDiskTest(unittest.TestCase):
+    def test_all(self):
+        class mock_return_piece(object):
+            def __init__(self):
+                self.piece_index = None
+                self.piece_length = 16
+                self.data = None
+
+        class mock_piece_front(object):
+            def __init__(self):
+                self.piece_index = 0
+                self.data = b'om'
+
+        class mock_piece_overlap(object):
+            def __init__(self):
+                self.piece_index = 25
+                self.data = b'ad'
+
+        class mock_piece_end(object):
+            def __init__(self):
+                self.piece_index = 47
+                self.data = b'jy'
+
+        class mock_fileinfo(object):
+            def __init__(self):
+                self.piece_length = 16
+                self.rootfilename = "Major_Lazor"
+                self.files = None
 
 
-class writetodisktest(object)
-    def __init__(self)          # class which automatically tests the writetodisk class and all its methods
-        info_dict = []          # tuples of directory or just a single file
-                                # files should have multimple files larger than a piece and multiple files smaller than a piece
-                                
-        
-        disk_writer = download_directory_manager(info_dict)
-                                #creating a new download_directory_manager using the dummy info dict
-        download_dir = self.downloads_dir = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOWNLOAD)
-        test_download_dir = os.path.join(download_dir, "testdownload")
+        downloadfile = collections.namedtuple('downloadfile', ['length', 'name'])
+        f = [downloadfile( 256 , './testPath/testFile1.data'), downloadfile( 512 , './testPath/testFile2.data') ]
+
+        download_dir = os.getcwd()
+        test_fileinfo = mock_fileinfo()
+        test_fileinfo.files = f
+        disk_writer = writetodisk.FilesystemManager(test_fileinfo)
+#creating a new download_directory_manager using the dummy info dict
+        test_download_dir = os.path.join(download_dir, "Major_Lazor/testPath")
         does_this_dir_exist = os.path.exists(test_download_dir)
         self.assertTrue(does_this_dir_exist)
-        files = get_files_from_info_dict(info_dict)
-        
-        for f in files
-            self.assertTrue(os.path.exists(os.path.join(test_download_dir, f['path'], f['name'])))
-        
-        # finished testing the created directories and files now time to test pieces
-        
-        piece1_array = byteArray()
-        piece1 =        # create dummy piece with some distinguishable byte sequence
-        
-        piece2_array = byteArray()
-        piece2 =        # create dummy piece with some distinguishable byte sequence other than piece 1
-        
-        piece3_array = byteArray()
-        piece3 =        # create dummy piece with some distinguishable byte sequence other than 1 and 2
-        
-        piece_final_array = byteArray()
-        piece_final =   # create dummy piece with somme distinguishable byte sequence other than 1 or 2 or 3 and make it a different size than the others (which may be the case in the real world!)
-        
-                        # we will now write pieces to the file and assert that the pieces were placed into the correct locations
-        
-        disk_writer.write_piece_to_file(piece1)
-        
-        self.assertTrue(""" open the affected files and verify they have written to the correct spot """)
-        
-        disk_writer.write_piece_to_file(piece2)
-        
-        self.assertTrue(""" open the affected files and verify they have written to the correct spot """)
-        
-        disk_writer.write_piece_to_file(piece3)
-        
-        self.assertTrue(""" open the affected files and verify they have written to the correct spot """)
-        
-        disk_writer.write_piece_to_file(piece4)
-        
-        self.assertTrue(""" open the affected files and verify they have written to the correct spot """)
-        
-        #fin
+
+        self.assertTrue(os.path.exists(os.path.join(os.getcwd(), 'Major_Lazor/testPath/testFile1.data')))
+        self.assertTrue(os.path.exists(os.path.join(os.getcwd(), 'Major_Lazor/testPath/testFile2.data')))
+
+        piece_front = mock_piece_front()
+        piece_overlap = mock_piece_overlap()
+        piece_end = mock_piece_end()
+
+        return_piece_front = mock_return_piece()
+        return_piece_overlap = mock_return_piece()
+        return_piece_end = mock_return_piece()
+        return_piece_front.piece_index = 0
+        return_piece_overlap.piece_index = 25
+        return_piece_end.piece_index = 47
+
+        disk_writer.write_piece_to_file(piece_front)
+        disk_writer.get_piece(return_piece_front)
+        self.assertTrue(return_piece_front.data == piece_front.data)
+
+        disk_writer.write_piece_to_file(piece_overlap)
+        disk_writer.get_piece(return_piece_overlap)
+        self.assertTrue(piece_overlap.data == return_piece_overlap.data)
+
+        disk_writer.write_piece_to_file(piece_end)
+        disk_writer.get_piece(return_piece_end)
+        self.assertTrue(piece_end.data == return_piece_end.data)
+
+if __name__ == '__main__':
+    unittest.main()
